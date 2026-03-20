@@ -35,7 +35,15 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserOption[]>([]);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    address: string;
+    description: string;
+    tenant: string;
+    status: string;
+    stage: string;
+    projectManager: string;
+  }>({
     name: "",
     address: "",
     description: "",

@@ -47,7 +47,7 @@ async function main() {
       data: {
         name: "The Grand at Riverside",
         address: "1200 River Blvd, Austin, TX 78701",
-        type: "Mixed-Use",
+        tenant: "Mixed-Use",
         status: "Active",
         stage: "Construction",
         startDate: new Date("2025-03-01"),
@@ -61,7 +61,7 @@ async function main() {
       data: {
         name: "Oakmont Business Park",
         address: "8500 Oakmont Dr, Denver, CO 80231",
-        type: "Commercial",
+        tenant: "Commercial",
         status: "Active",
         stage: "Design",
         startDate: new Date("2025-09-15"),
@@ -75,7 +75,7 @@ async function main() {
       data: {
         name: "Sunset Ridge Homes",
         address: "450 Sunset Ridge Rd, Nashville, TN 37215",
-        type: "Residential",
+        tenant: "Residential",
         status: "Active",
         stage: "Permitting",
         startDate: new Date("2025-11-01"),
@@ -89,7 +89,7 @@ async function main() {
       data: {
         name: "Downtown Lofts Renovation",
         address: "220 Main St, Portland, OR 97204",
-        type: "Residential",
+        tenant: "Residential",
         status: "Completed",
         stage: "Closeout",
         startDate: new Date("2024-01-15"),
@@ -103,7 +103,7 @@ async function main() {
       data: {
         name: "Harbor Point Industrial",
         address: "9100 Harbor Point Way, Houston, TX 77015",
-        type: "Industrial",
+        tenant: "Industrial",
         status: "On Hold",
         stage: "Pre-Development",
         startDate: new Date("2026-06-01"),

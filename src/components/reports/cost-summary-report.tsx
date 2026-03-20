@@ -107,7 +107,7 @@ export function CostSummaryReport() {
                   <XAxis dataKey="name" className="text-xs" />
                   <YAxis tickFormatter={(v) => formatCurrency(v)} className="text-xs" />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value) => formatCurrency(Number(value))}
                     contentStyle={{
                       backgroundColor: "var(--color-card)",
                       border: "1px solid var(--color-border)",

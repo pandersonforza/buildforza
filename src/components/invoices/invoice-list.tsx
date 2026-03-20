@@ -281,20 +281,15 @@ export function InvoiceList({
         return (
           <div className="flex items-center gap-1">
             {row.original.filePath && (
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
+              <a
+                href={row.original.filePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="View PDF"
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground"
               >
-                <a
-                  href={row.original.filePath}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="View PDF"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
+                <ExternalLink className="h-4 w-4" />
+              </a>
             )}
             {status === "Pending Review" && (
               <>

@@ -95,8 +95,8 @@ export function DrawHistoryReport() {
                   <XAxis dataKey="name" className="text-xs" />
                   <YAxis tickFormatter={(v) => formatCurrency(v)} className="text-xs" />
                   <Tooltip
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
+                    formatter={(value, name) => [
+                      formatCurrency(Number(value)),
                       name === "cumulative" ? "Cumulative" : "This Draw",
                     ]}
                     contentStyle={{

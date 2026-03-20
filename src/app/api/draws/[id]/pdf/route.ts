@@ -242,7 +242,7 @@ export async function GET(
 
     const filename = `Draw_${draw.drawNumber}_${draw.project.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
-    return new NextResponse(finalBytes, {
+    return new NextResponse(Buffer.from(finalBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,

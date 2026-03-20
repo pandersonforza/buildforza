@@ -78,12 +78,13 @@ export function PortfolioAnalytics() {
   }
   const stageData = Object.entries(stageCounts).map(([name, value]) => ({ name, value }));
 
-  // Spending by type stacked bar
-  const typeData: Record<string, number> = {};
+  // Spending by tenant
+  const tenantData: Record<string, number> = {};
   for (const p of projects) {
-    typeData[p.type] = (typeData[p.type] || 0) + p.totalBudget;
+    const key = p.tenant || "Unassigned";
+    tenantData[key] = (tenantData[key] || 0) + p.totalBudget;
   }
-  const spendingByType = Object.entries(typeData).map(([name, budget]) => ({
+  const spendingByType = Object.entries(tenantData).map(([name, budget]) => ({
     name,
     budget,
   }));
@@ -101,7 +102,7 @@ export function PortfolioAnalytics() {
               <XAxis type="number" tickFormatter={(v) => formatCurrency(v)} className="text-xs" />
               <YAxis type="category" dataKey="name" className="text-xs" width={100} />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value) => formatCurrency(Number(value))}
                 contentStyle={{
                   backgroundColor: "var(--color-card)",
                   border: "1px solid var(--color-border)",
@@ -126,7 +127,7 @@ export function PortfolioAnalytics() {
               <XAxis dataKey="name" className="text-xs" />
               <YAxis tickFormatter={(v) => formatCurrency(v)} className="text-xs" />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value) => formatCurrency(Number(value))}
                 contentStyle={{
                   backgroundColor: "var(--color-card)",
                   border: "1px solid var(--color-border)",

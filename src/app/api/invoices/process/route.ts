@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         const categories = p.budgetCategories
           .map((cat) => {
             const items = cat.lineItems
-              .map((li) => `      - LineItem ID: "${li.id}" | Name: "${li.name}" | Budget: $${li.budgetAmount}`)
+              .map((li) => `      - LineItem ID: "${li.id}" | Name: "${li.description}" | Budget: $${li.revisedBudget}`)
               .join('\n');
             return `    Category: "${cat.name}" (ID: "${cat.id}")\n${items}`;
           })

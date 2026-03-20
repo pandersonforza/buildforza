@@ -73,7 +73,7 @@ export function PortfolioChart() {
             <XAxis dataKey="name" className="text-xs" tick={{ fill: "var(--color-muted-foreground)" }} />
             <YAxis tickFormatter={(v) => formatCurrency(v)} className="text-xs" tick={{ fill: "var(--color-muted-foreground)" }} />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value) => formatCurrency(Number(value))}
               contentStyle={{
                 backgroundColor: "var(--color-card)",
                 border: "1px solid var(--color-border)",

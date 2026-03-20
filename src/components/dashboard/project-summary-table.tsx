@@ -80,7 +80,7 @@ export function ProjectSummaryTable() {
                     {project.name}
                   </Link>
                 </TableCell>
-                <TableCell>{project.type}</TableCell>
+                <TableCell>{project.tenant}</TableCell>
                 <TableCell>
                   <StatusBadge status={project.stage} type="stage" />
                 </TableCell>
