@@ -8,7 +8,7 @@ import { BudgetImport } from "@/components/budget/budget-import";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Upload } from "lucide-react";
-import type { BudgetCategoryWithLineItems, BudgetSummary, CategorySummary } from "@/types";
+import type { BudgetCategoryWithLineItems, BudgetSummary } from "@/types";
 
 export default function BudgetPage() {
   const params = useParams();
@@ -16,7 +16,6 @@ export default function BudgetPage() {
 
   const [categories, setCategories] = useState<BudgetCategoryWithLineItems[]>([]);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
-  const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -38,7 +37,6 @@ export default function BudgetPage() {
       if (analyticsRes.ok) {
         const analyticsData = await analyticsRes.json();
         setSummary(analyticsData.budgetSummary || null);
-        setCategorySummaries(analyticsData.categorySummaries || []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -81,7 +79,7 @@ export default function BudgetPage() {
         </Button>
       </div>
       {summary && (
-        <BudgetOverview summary={summary} categorySummaries={categorySummaries} />
+        <BudgetOverview summary={summary} />
       )}
       <BudgetTable projectId={projectId} categories={categories} onMutate={fetchData} />
       <BudgetImport

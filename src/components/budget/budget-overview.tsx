@@ -2,15 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
-import { VarianceChart } from "@/components/budget/variance-chart";
-import type { BudgetSummary, CategorySummary } from "@/types";
+import type { BudgetSummary } from "@/types";
 
 interface BudgetOverviewProps {
   summary: BudgetSummary;
-  categorySummaries: CategorySummary[];
 }
 
-export function BudgetOverview({ summary, categorySummaries }: BudgetOverviewProps) {
+export function BudgetOverview({ summary }: BudgetOverviewProps) {
   const cards = [
     { label: "Original Budget", amount: summary.originalBudget },
     { label: "Revised Budget", amount: summary.revisedBudget },
@@ -39,8 +37,6 @@ export function BudgetOverview({ summary, categorySummaries }: BudgetOverviewPro
           </Card>
         ))}
       </div>
-
-      <VarianceChart categorySummaries={categorySummaries} />
     </div>
   );
 }
