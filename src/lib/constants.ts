@@ -109,7 +109,7 @@ export const INVOICE_STATUSES = [
 
 export const USER_ROLES = ["admin", "user"] as const;
 
-export const TASK_STATUSES = ["pending", "in_progress", "completed"] as const;
+export const TASK_STATUSES = ["pending", "completed"] as const;
 
 export const TASK_PRIORITIES = ["low", "medium", "high"] as const;
 

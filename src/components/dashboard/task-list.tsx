@@ -17,7 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
-import { Plus, Trash2, Check, Circle, Clock, User } from "lucide-react";
+import { Plus, Trash2, Check, Circle, User } from "lucide-react";
 
 interface TaskUser {
   id: string;
@@ -45,7 +45,6 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   pending: <Circle className="h-4 w-4 text-muted-foreground" />,
-  in_progress: <Clock className="h-4 w-4 text-amber-500" />,
   completed: <Check className="h-4 w-4 text-emerald-500" />,
 };
 
@@ -124,12 +123,7 @@ export function TaskList() {
   };
 
   const cycleStatus = async (task: Task) => {
-    const nextStatus: Record<string, string> = {
-      pending: "in_progress",
-      in_progress: "completed",
-      completed: "pending",
-    };
-    const newStatus = nextStatus[task.status] || "pending";
+    const newStatus = task.status === "completed" ? "pending" : "completed";
 
     try {
       const res = await fetch(`/api/tasks/${task.id}`, {
