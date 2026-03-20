@@ -111,6 +111,15 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
     },
   ];
 
+  const activeProjects = projects.filter(
+    (p) => p.status !== "Cancelled" && p.status !== "On Hold"
+  );
+  const inactiveProjects = projects.filter(
+    (p) => p.status === "Cancelled" || p.status === "On Hold"
+  );
+
+  const [tab, setTab] = useState<"active" | "inactive">("active");
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -126,9 +135,32 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
         </Button>
       </div>
 
+      <div className="flex gap-1 mb-4 border-b border-border">
+        <button
+          onClick={() => setTab("active")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "active"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Active ({activeProjects.length})
+        </button>
+        <button
+          onClick={() => setTab("inactive")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "inactive"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          On Hold / Cancelled ({inactiveProjects.length})
+        </button>
+      </div>
+
       <DataTable
         columns={columns}
-        data={projects}
+        data={tab === "active" ? activeProjects : inactiveProjects}
         searchKey="name"
         searchPlaceholder="Search projects..."
       />
