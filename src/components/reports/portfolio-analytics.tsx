@@ -23,7 +23,7 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   Active: "#10b981",
   "On Hold": "#f59e0b",
   Completed: "#3b82f6",
-  Cancelled: "#ef4444",
+  Dead: "#ef4444",
 };
 
 const STAGE_CHART_COLORS: Record<string, string> = {

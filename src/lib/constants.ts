@@ -9,7 +9,7 @@ export const PROJECT_STATUSES = [
   "Active",
   "On Hold",
   "Completed",
-  "Cancelled",
+  "Dead",
 ] as const;
 
 export const PROJECT_STAGES = [
@@ -75,7 +75,7 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Active: { bg: "bg-emerald-900/40", text: "text-emerald-400" },
   "On Hold": { bg: "bg-amber-900/40", text: "text-amber-400" },
   Completed: { bg: "bg-blue-900/40", text: "text-blue-400" },
-  Cancelled: { bg: "bg-red-900/40", text: "text-red-400" },
+  Dead: { bg: "bg-red-900/40", text: "text-red-400" },
 
   // Contract statuses
   Draft: { bg: "bg-gray-800/50", text: "text-gray-400" },

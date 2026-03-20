@@ -117,11 +117,14 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
   const completedProjects = projects.filter(
     (p) => p.status === "Completed"
   );
-  const inactiveProjects = projects.filter(
-    (p) => p.status === "Cancelled" || p.status === "On Hold"
+  const onHoldProjects = projects.filter(
+    (p) => p.status === "On Hold"
+  );
+  const deadProjects = projects.filter(
+    (p) => p.status === "Dead"
   );
 
-  const [tab, setTab] = useState<"active" | "completed" | "inactive">("active");
+  const [tab, setTab] = useState<"active" | "completed" | "onhold" | "dead">("active");
 
   return (
     <div>
@@ -160,20 +163,30 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
           Completed ({completedProjects.length})
         </button>
         <button
-          onClick={() => setTab("inactive")}
+          onClick={() => setTab("onhold")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === "inactive"
+            tab === "onhold"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          On Hold / Cancelled ({inactiveProjects.length})
+          On Hold ({onHoldProjects.length})
+        </button>
+        <button
+          onClick={() => setTab("dead")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "dead"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Dead ({deadProjects.length})
         </button>
       </div>
 
       <DataTable
         columns={columns}
-        data={tab === "active" ? activeProjects : tab === "completed" ? completedProjects : inactiveProjects}
+        data={tab === "active" ? activeProjects : tab === "completed" ? completedProjects : tab === "onhold" ? onHoldProjects : deadProjects}
         searchKey="name"
         searchPlaceholder="Search projects..."
       />
