@@ -112,13 +112,16 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
   ];
 
   const activeProjects = projects.filter(
-    (p) => p.status !== "Cancelled" && p.status !== "On Hold"
+    (p) => p.status === "Active"
+  );
+  const completedProjects = projects.filter(
+    (p) => p.status === "Completed"
   );
   const inactiveProjects = projects.filter(
     (p) => p.status === "Cancelled" || p.status === "On Hold"
   );
 
-  const [tab, setTab] = useState<"active" | "inactive">("active");
+  const [tab, setTab] = useState<"active" | "completed" | "inactive">("active");
 
   return (
     <div>
@@ -147,6 +150,16 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
           Active ({activeProjects.length})
         </button>
         <button
+          onClick={() => setTab("completed")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "completed"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Completed ({completedProjects.length})
+        </button>
+        <button
           onClick={() => setTab("inactive")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === "inactive"
@@ -160,7 +173,7 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
 
       <DataTable
         columns={columns}
-        data={tab === "active" ? activeProjects : inactiveProjects}
+        data={tab === "active" ? activeProjects : tab === "completed" ? completedProjects : inactiveProjects}
         searchKey="name"
         searchPlaceholder="Search projects..."
       />
