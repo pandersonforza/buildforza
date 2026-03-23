@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Send, CheckCircle } from "lucide-react";
+import { Plus, Trash2, Send, CheckCircle, Download, Upload } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import * as XLSX from "xlsx";
 
 interface LineItem {
   id: string;
@@ -22,6 +23,89 @@ interface BidSubmissionFormProps {
   prefillEmail?: string;
 }
 
+const DEFAULT_LINE_ITEMS: Omit<LineItem, "id">[] = [
+  // General Conditions
+  { description: "Supervision", amount: "", category: "General Conditions" },
+  { description: "Contractor Overhead", amount: "", category: "General Conditions" },
+  { description: "Site Cameras", amount: "", category: "General Conditions" },
+  { description: "Insurance", amount: "", category: "General Conditions" },
+  { description: "Traffic Control Measures", amount: "", category: "General Conditions" },
+  { description: "Fencing", amount: "", category: "General Conditions" },
+  { description: "Temp Utilities", amount: "", category: "General Conditions" },
+  { description: "Dumpsters", amount: "", category: "General Conditions" },
+  { description: "Contractor Fee", amount: "", category: "General Conditions" },
+  { description: "Construction Tax", amount: "", category: "General Conditions" },
+  // Site
+  { description: "Site Demolition", amount: "", category: "Site" },
+  { description: "Import/Export", amount: "", category: "Site" },
+  { description: "Grading rough/finish", amount: "", category: "Site" },
+  { description: "Over Excavation", amount: "", category: "Site" },
+  { description: "Concrete Curbing", amount: "", category: "Site" },
+  { description: "Concrete Gutters", amount: "", category: "Site" },
+  { description: "Concrete Flatwork Site", amount: "", category: "Site" },
+  { description: "Concrete Flatwork Building", amount: "", category: "Site" },
+  { description: "Paving Asphalt", amount: "", category: "Site" },
+  { description: "Paving Base Rock", amount: "", category: "Site" },
+  { description: "Paving Concrete", amount: "", category: "Site" },
+  { description: "Paint Striping", amount: "", category: "Site" },
+  { description: "Seal Coat", amount: "", category: "Site" },
+  { description: "Storm", amount: "", category: "Site" },
+  { description: "Water", amount: "", category: "Site" },
+  { description: "Sewer", amount: "", category: "Site" },
+  { description: "Grease Interceptor", amount: "", category: "Site" },
+  { description: "Power", amount: "", category: "Site" },
+  { description: "Gas", amount: "", category: "Site" },
+  { description: "ISP/Telco", amount: "", category: "Site" },
+  { description: "Site CMU Walls", amount: "", category: "Site" },
+  { description: "Site Wood Fences", amount: "", category: "Site" },
+  { description: "Site Metal Fences", amount: "", category: "Site" },
+  { description: "Trash Enclosure CMU", amount: "", category: "Site" },
+  { description: "Trash Enclosure Gates/Hardware/Bollards", amount: "", category: "Site" },
+  { description: "Site Bollards", amount: "", category: "Site" },
+  { description: "Site Lighting", amount: "", category: "Site" },
+  { description: "Site Furnishings", amount: "", category: "Site" },
+  { description: "Site Signage Footings", amount: "", category: "Site" },
+  { description: "Landscape", amount: "", category: "Site" },
+  { description: "Construction Survey", amount: "", category: "Site" },
+  // Building Costs
+  { description: "Building Demolition", amount: "", category: "Building Costs" },
+  { description: "Building Foundation", amount: "", category: "Building Costs" },
+  { description: "Building Metal Siding", amount: "", category: "Building Costs" },
+  { description: "Rough Carpentry", amount: "", category: "Building Costs" },
+  { description: "Building Stucco", amount: "", category: "Building Costs" },
+  { description: "Building Brick", amount: "", category: "Building Costs" },
+  { description: "Building CMU", amount: "", category: "Building Costs" },
+  { description: "Building Stone", amount: "", category: "Building Costs" },
+  { description: "Paint Interior", amount: "", category: "Building Costs" },
+  { description: "Paint Exterior", amount: "", category: "Building Costs" },
+  { description: "Roof/Wall Insulation", amount: "", category: "Building Costs" },
+  { description: "TPO Roofing", amount: "", category: "Building Costs" },
+  { description: "Building Down Spouts", amount: "", category: "Building Costs" },
+  { description: "Drywall", amount: "", category: "Building Costs" },
+  { description: "FRP", amount: "", category: "Building Costs" },
+  { description: "Mechanical Ducting/Grills/Diffusers", amount: "", category: "Building Costs" },
+  { description: "HVAC Units", amount: "", category: "Building Costs" },
+  { description: "Air Curtains", amount: "", category: "Building Costs" },
+  { description: "Electrical", amount: "", category: "Building Costs" },
+  { description: "Plumbing", amount: "", category: "Building Costs" },
+  { description: "Flooring Epoxy", amount: "", category: "Building Costs" },
+  { description: "Flooring Tile", amount: "", category: "Building Costs" },
+  { description: "Ceiling", amount: "", category: "Building Costs" },
+  { description: "Shelving - Install", amount: "", category: "Building Costs" },
+  { description: "Doors", amount: "", category: "Building Costs" },
+  { description: "Windows", amount: "", category: "Building Costs" },
+  { description: "Bathroom Acc", amount: "", category: "Building Costs" },
+  { description: "Ice Machine - Install", amount: "", category: "Building Costs" },
+  { description: "Refrigerators", amount: "", category: "Building Costs" },
+  { description: "SS Tables and Sinks - Install", amount: "", category: "Building Costs" },
+  { description: "Signage", amount: "", category: "Building Costs" },
+  { description: "Shelving Install", amount: "", category: "Building Costs" },
+];
+
+function makeLineItems(items: Omit<LineItem, "id">[]): LineItem[] {
+  return items.map((li) => ({ ...li, id: crypto.randomUUID() }));
+}
+
 export function BidSubmissionForm({
   token,
   projectName,
@@ -35,87 +119,11 @@ export function BidSubmissionForm({
   const [gcEmail, setGcEmail] = useState(prefillEmail || "");
   const [gcPhone, setGcPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [lineItems, setLineItems] = useState<LineItem[]>([
-    // General Conditions
-    { id: crypto.randomUUID(), description: "Supervision", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Contractor Overhead", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Site Cameras", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Insurance", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Traffic Control Measures", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Fencing", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Temp Utilities", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Dumpsters", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Contractor Fee", amount: "", category: "General Conditions" },
-    { id: crypto.randomUUID(), description: "Construction Tax", amount: "", category: "General Conditions" },
-    // Site
-    { id: crypto.randomUUID(), description: "Site Demolition", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Import/Export", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Grading rough/finish", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Over Excavation", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Concrete Curbing", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Concrete Gutters", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Concrete Flatwork Site", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Concrete Flatwork Building", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Paving Asphalt", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Paving Base Rock", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Paving Concrete", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Paint Striping", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Seal Coat", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Storm", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Water", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Sewer", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Grease Interceptor", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Power", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Gas", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "ISP/Telco", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site CMU Walls", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site Wood Fences", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site Metal Fences", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Trash Enclosure CMU", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Trash Enclosure Gates/Hardware/Bollards", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site Bollards", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site Lighting", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site Furnishings", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Site Signage Footings", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Landscape", amount: "", category: "Site" },
-    { id: crypto.randomUUID(), description: "Construction Survey", amount: "", category: "Site" },
-    // Building Costs
-    { id: crypto.randomUUID(), description: "Building Demolition", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building Foundation", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building Metal Siding", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Rough Carpentry", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building Stucco", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building Brick", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building CMU", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building Stone", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Paint Interior", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Paint Exterior", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Roof/Wall Insulation", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "TPO Roofing", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Building Down Spouts", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Drywall", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "FRP", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Mechanical Ducting/Grills/Diffusers", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "HVAC Units", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Air Curtains", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Electrical", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Plumbing", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Flooring Epoxy", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Flooring Tile", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Ceiling", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Shelving - Install", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Doors", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Windows", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Bathroom Acc", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Ice Machine - Install", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Refrigerators", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "SS Tables and Sinks - Install", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Signage", amount: "", category: "Building Costs" },
-    { id: crypto.randomUUID(), description: "Shelving Install", amount: "", category: "Building Costs" },
-  ]);
+  const [lineItems, setLineItems] = useState<LineItem[]>(makeLineItems(DEFAULT_LINE_ITEMS));
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addLineItem = () => {
     setLineItems([
@@ -139,6 +147,64 @@ export function BidSubmissionForm({
     (sum, li) => sum + (parseFloat(li.amount) || 0),
     0
   );
+
+  const handleDownloadTemplate = () => {
+    const data = lineItems.map((li) => ({
+      Description: li.description,
+      Category: li.category,
+      Amount: li.amount ? parseFloat(li.amount) : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 45 }, { wch: 20 }, { wch: 15 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bid");
+    XLSX.writeFile(wb, `Bid Template - ${projectName}.xlsx`);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+
+        const imported: LineItem[] = rows
+          .filter((row) => {
+            const desc = String(row["Description"] || row["description"] || "").trim();
+            return desc.length > 0;
+          })
+          .map((row) => {
+            const amount = row["Amount"] || row["amount"] || row["AMOUNT"] || "";
+            const numAmount = typeof amount === "number" ? amount : parseFloat(String(amount));
+            return {
+              id: crypto.randomUUID(),
+              description: String(row["Description"] || row["description"] || "").trim(),
+              category: String(row["Category"] || row["category"] || "").trim(),
+              amount: isNaN(numAmount) || numAmount === 0 ? "" : numAmount.toString(),
+            };
+          });
+
+        if (imported.length === 0) {
+          setError("No valid line items found in the spreadsheet. Ensure columns are named Description, Category, and Amount.");
+          return;
+        }
+
+        setLineItems(imported);
+        setError(null);
+      } catch {
+        setError("Failed to read spreadsheet. Please ensure it is a valid .xlsx or .csv file.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+    // Reset input so the same file can be re-imported
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -281,11 +347,30 @@ export function BidSubmissionForm({
 
         {/* Line Items */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-lg font-semibold">Bid Line Items</h2>
-            <Button variant="outline" size="sm" onClick={addLineItem}>
-              <Plus className="h-4 w-4 mr-1" /> Add Item
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                <Download className="h-4 w-4 mr-1" /> Download Template
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4 mr-1" /> Import Spreadsheet
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={handleImportFile}
+              />
+              <Button variant="outline" size="sm" onClick={addLineItem}>
+                <Plus className="h-4 w-4 mr-1" /> Add Item
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-3">
