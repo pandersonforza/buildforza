@@ -19,12 +19,16 @@ export async function POST(
       gcName?: string;
     };
 
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 60);
+
     const invitation = await prisma.bidInvitation.create({
       data: {
         projectId: id,
         gcCompany: gcCompany || null,
         gcEmail: gcEmail || null,
         gcName: gcName || null,
+        expiresAt,
       },
     });
 
