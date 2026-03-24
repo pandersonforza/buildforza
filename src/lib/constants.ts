@@ -77,6 +77,9 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Completed: { bg: "bg-blue-900/40", text: "text-blue-400" },
   Dead: { bg: "bg-red-900/40", text: "text-red-400" },
 
+  // Milestone statuses
+  Pending: { bg: "bg-gray-800/50", text: "text-gray-400" },
+
   // Contract statuses
   Draft: { bg: "bg-gray-800/50", text: "text-gray-400" },
   Executed: { bg: "bg-blue-900/40", text: "text-blue-400" },

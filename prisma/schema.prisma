@@ -83,6 +83,7 @@ model Project {
   notes            Note[]
   bidInvitations   BidInvitation[]
   bids             Bid[]
+  milestones       Milestone[]
 }
 
 model Note {
@@ -252,6 +253,25 @@ model Invoice {
   @@index([status])
   @@index([paidDate])
   @@index([budgetLineItemId])
+}
+
+model Milestone {
+  id           String    @id @default(cuid())
+  projectId    String
+  name         String
+  description  String?
+  devFee       Float     @default(0)
+  paidAmount   Float     @default(0)
+  expectedDate DateTime?
+  completedDate DateTime?
+  status       String    @default("Pending")
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model BidInvitation {

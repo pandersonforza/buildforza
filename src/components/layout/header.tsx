@@ -16,6 +16,7 @@ const KNOWN_SEGMENTS: Record<string, string> = {
   draws: "Draws",
   contracts: "Contracts",
   documents: "Documents",
+  milestones: "Milestones",
 };
 
 function isId(segment: string) {
