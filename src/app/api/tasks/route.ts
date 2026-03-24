@@ -18,11 +18,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 
-    const where: Record<string, unknown> = { userId: user.id };
-    if (status) where.status = status;
-
+    // Show tasks where user is the assignee OR the creator (assigned to someone else)
+    const statusFilter = status ? { status } : {};
     const tasks = await prisma.task.findMany({
-      where,
+      where: {
+        ...statusFilter,
+        OR: [
+          { userId: user.id },
+          { createdById: user.id, NOT: { userId: user.id } },
+        ],
+      },
       include: taskIncludes,
       orderBy: [
         { status: "asc" },

@@ -15,11 +15,21 @@ export async function PUT(
     const { id } = await params;
     const existing = await prisma.task.findUnique({ where: { id } });
 
-    if (!existing || existing.userId !== user.id) {
+    const isAssignee = existing?.userId === user.id;
+    const isCreator = existing?.createdById === user.id;
+    if (!existing || (!isAssignee && !isCreator)) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
     const body = await request.json();
+
+    // Only the assignee can mark a task as completed
+    if (body.status === "completed" && !isAssignee) {
+      return NextResponse.json(
+        { error: "Only the assigned user can mark this task as complete" },
+        { status: 403 }
+      );
+    }
 
     const task = await prisma.task.update({
       where: { id },
@@ -31,7 +41,7 @@ export async function PUT(
         ...(body.dueDate !== undefined && { dueDate: body.dueDate ? new Date(body.dueDate) : null }),
         ...(body.projectId !== undefined && { projectId: body.projectId || null }),
       },
-      include: { project: { select: { id: true, name: true } } },
+      include: { project: { select: { id: true, name: true } }, user: { select: { id: true, name: true } }, createdBy: { select: { id: true, name: true } } },
     });
 
     return NextResponse.json(task);
@@ -54,7 +64,7 @@ export async function DELETE(
     const { id } = await params;
     const existing = await prisma.task.findUnique({ where: { id } });
 
-    if (!existing || existing.userId !== user.id) {
+    if (!existing || (existing.userId !== user.id && existing.createdById !== user.id)) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
