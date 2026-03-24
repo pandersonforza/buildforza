@@ -192,7 +192,7 @@ export function TaskList() {
             </p>
           ) : (
             <div className="space-y-1">
-              {[...activeTasks, ...completedTasks].map((task) => {
+              {activeTasks.map((task) => {
                 const assignedByOther =
                   task.createdBy && task.createdBy.id !== currentUser?.id;
                 return (
