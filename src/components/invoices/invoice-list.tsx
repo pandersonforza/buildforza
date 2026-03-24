@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { InvoiceUpload } from "@/components/invoices/invoice-upload";
+import { PayAppUpload } from "@/components/invoices/payapp-upload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,6 +41,7 @@ export function InvoiceList({
   projectId,
 }: InvoiceListProps) {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [payAppOpen, setPayAppOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -369,10 +371,16 @@ export function InvoiceList({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Invoices</h2>
         {canEdit && (
-          <Button onClick={() => setUploadOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Upload Invoice
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setPayAppOpen(true)}>
+              <FileText className="h-4 w-4 mr-2" />
+              Upload Pay App
+            </Button>
+            <Button onClick={() => setUploadOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Upload Invoice
+            </Button>
+          </div>
         )}
       </div>
 
@@ -386,6 +394,13 @@ export function InvoiceList({
       <InvoiceUpload
         open={uploadOpen}
         onOpenChange={setUploadOpen}
+        projectId={projectId}
+        onSuccess={onMutate}
+      />
+
+      <PayAppUpload
+        open={payAppOpen}
+        onOpenChange={setPayAppOpen}
         projectId={projectId}
         onSuccess={onMutate}
       />
