@@ -15,7 +15,9 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 interface BidLineItem {
   id: string;
@@ -47,7 +49,10 @@ export function BidList({ projectId }: BidListProps) {
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedBid, setExpandedBid] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchBids = useCallback(async () => {
     try {
@@ -78,6 +83,18 @@ export function BidList({ projectId }: BidListProps) {
       fetchBids();
     } catch {
       toast({ title: "Error", description: "Failed to update bid status", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const res = await fetch(`/api/bids/${deleteId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete bid");
+      toast({ title: "Bid deleted" });
+      fetchBids();
+    } catch {
+      toast({ title: "Error", description: "Failed to delete bid", variant: "destructive" });
     }
   };
 
@@ -167,6 +184,19 @@ export function BidList({ projectId }: BidListProps) {
                             </Button>
                           )
                         )}
+                        {user?.role === "admin" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setDeleteId(bid.id);
+                              setDeleteOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -230,6 +260,15 @@ export function BidList({ projectId }: BidListProps) {
           </Table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Bid"
+        description="Are you sure you want to delete this bid? This action cannot be undone."
+        onConfirm={handleDelete}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }
