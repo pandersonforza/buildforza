@@ -77,12 +77,13 @@ export function MilestonesPanel({ projectId }: MilestonesPanelProps) {
   const handleToggleComplete = async (milestone: Milestone) => {
     const newStatus = milestone.status === "Completed" ? "Pending" : "Completed";
     const completedDate = newStatus === "Completed" ? new Date().toISOString() : null;
+    const paidAmount = newStatus === "Completed" ? milestone.devFee : 0;
 
     try {
       const res = await fetch(`/api/milestones/${milestone.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus, completedDate }),
+        body: JSON.stringify({ status: newStatus, completedDate, paidAmount }),
       });
       if (!res.ok) throw new Error();
       fetchMilestones();
