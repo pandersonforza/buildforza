@@ -10,6 +10,7 @@ import { DrawForm } from "@/components/draws/draw-form";
 import { DrawDetail } from "@/components/draws/draw-detail";
 import { Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 import type { DrawRequestWithLineItems } from "@/types";
 
 interface DrawListProps {
@@ -19,6 +20,7 @@ interface DrawListProps {
 }
 
 export function DrawList({ projectId, draws, onMutate }: DrawListProps) {
+  const { canEdit } = useAuth();
   const [formOpen, setFormOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -85,10 +87,12 @@ export function DrawList({ projectId, draws, onMutate }: DrawListProps) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Draw Requests</h2>
-        <Button onClick={() => setFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Draw
-        </Button>
+        {canEdit && (
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Draw
+          </Button>
+        )}
       </div>
 
       <DataTable columns={columns} data={draws} />

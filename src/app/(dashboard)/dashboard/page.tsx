@@ -6,6 +6,7 @@ import { KPICards } from "@/components/dashboard/kpi-cards";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PendingApprovals } from "@/components/dashboard/pending-approvals";
 import { TaskList } from "@/components/dashboard/task-list";
+import { useAuth } from "@/hooks/use-auth";
 
 // Lazy load chart-heavy components to reduce initial bundle
 const ProjectStatusChart = dynamic(
@@ -19,6 +20,7 @@ const ProjectSummaryTable = dynamic(
 
 export default function DashboardPage() {
   const { data, isLoading, error } = usePortfolioAnalytics();
+  const { canEdit } = useAuth();
 
   if (error) {
     return (
@@ -45,10 +47,12 @@ export default function DashboardPage() {
         <KPICards data={data} />
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TaskList />
-        <PendingApprovals />
-      </div>
+      {canEdit && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TaskList />
+          <PendingApprovals />
+        </div>
+      )}
 
       <ProjectStatusChart />
 
