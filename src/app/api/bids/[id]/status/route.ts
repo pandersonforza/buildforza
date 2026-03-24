@@ -76,7 +76,8 @@ async function addBidToBudget(
   }
 
   // Now process all line items with minimal queries using a transaction
-  const operations: Parameters<typeof prisma.$transaction>[0] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const operations: any[] = [];
 
   for (const [categoryName, items] of byCategory) {
     const category = categoryMap.get(categoryName)!;
