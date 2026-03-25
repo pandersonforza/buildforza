@@ -84,6 +84,9 @@ model Project {
   bidInvitations   BidInvitation[]
   bids             Bid[]
   milestones       Milestone[]
+
+  @@index([status])
+  @@index([stage])
 }
 
 model Note {
@@ -200,6 +203,7 @@ model DrawLineItem {
   budgetLineItem BudgetLineItem @relation(fields: [budgetLineItemId], references: [id])
 
   @@index([drawRequestId])
+  @@index([budgetLineItemId])
 }
 
 model Document {

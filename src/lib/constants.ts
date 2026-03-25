@@ -145,39 +145,11 @@ export const LINE_ITEM_ORDER: Record<string, string[]> = {
   ],
 };
 
-export const CONTRACT_TYPES = [
-  "Lump Sum",
-  "GMP",
-  "Cost Plus",
-  "Time & Materials",
-] as const;
-
-export const CONTRACT_STATUSES = [
-  "Draft",
-  "Executed",
-  "In Progress",
-  "Complete",
-  "Terminated",
-] as const;
-
 export const DRAW_STATUSES = [
   "Draft",
   "Submitted",
   "Approved",
   "Funded",
-] as const;
-
-export const VENDOR_CATEGORIES = [
-  "General Contractor",
-  "Subcontractor",
-  "Consultant",
-  "Supplier",
-] as const;
-
-export const VENDOR_STATUSES = [
-  "Active",
-  "Inactive",
-  "Preferred",
 ] as const;
 
 export const DOCUMENT_CATEGORIES = [

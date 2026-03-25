@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { Loader2, Upload, Download } from "lucide-react";
-import * as XLSX from "xlsx";
+// xlsx is dynamically imported when needed to reduce bundle size
 import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency } from "@/lib/utils";
 
@@ -73,7 +73,8 @@ export function PayAppEntry({ open, onOpenChange, projectId, onSuccess }: PayApp
   const excelInputRef = useRef<HTMLInputElement>(null);
 
   // Download a blank template with line item descriptions
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import("xlsx");
     const rows = items.map((item) => ({
       "Line Item": item.description,
       "Category": item.categoryName,
@@ -94,8 +95,9 @@ export function PayAppEntry({ open, onOpenChange, projectId, onSuccess }: PayApp
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        const XLSX = await import("xlsx");
         const data = new Uint8Array(evt.target?.result as ArrayBuffer);
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];

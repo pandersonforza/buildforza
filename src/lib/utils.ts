@@ -23,16 +23,3 @@ export function formatDate(date: Date | string): string {
 export function formatPercent(value: number): string {
   return `${Math.round(value)}%`;
 }
-
-export function getVariance(
-  revised: number,
-  actual: number
-): { amount: number; percent: number; isOver: boolean } {
-  const amount = actual - revised;
-  const percent = revised !== 0 ? (amount / revised) * 100 : 0;
-  return {
-    amount,
-    percent,
-    isOver: amount > 0,
-  };
-}

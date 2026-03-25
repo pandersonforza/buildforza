@@ -1,7 +1,6 @@
-import * as XLSX from "xlsx";
 import type { BudgetCategoryWithLineItems } from "@/types";
 
-export function exportBudgetToExcel(
+export async function exportBudgetToExcel(
   categories: BudgetCategoryWithLineItems[],
   projectName: string
 ) {
@@ -47,6 +46,7 @@ export function exportBudgetToExcel(
     Remaining: totalRevised - totalActual,
   });
 
+  const XLSX = await import("xlsx");
   const ws = XLSX.utils.json_to_sheet(rows);
 
   // Set column widths

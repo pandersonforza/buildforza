@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Send, CheckCircle, Download, Upload } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import * as XLSX from "xlsx";
+// xlsx is dynamically imported when needed to reduce bundle size
 
 interface LineItem {
   id: string;
@@ -148,7 +148,8 @@ export function BidSubmissionForm({
     0
   );
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import("xlsx");
     const data = lineItems.map((li) => ({
       Description: li.description,
       Category: li.category,
@@ -166,8 +167,9 @@ export function BidSubmissionForm({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        const XLSX = await import("xlsx");
         const data = new Uint8Array(evt.target?.result as ArrayBuffer);
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];

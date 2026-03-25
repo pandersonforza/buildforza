@@ -53,38 +53,12 @@ export type BudgetCategoryWithLineItems = BudgetCategory & {
   lineItems: BudgetLineItem[];
 };
 
-export type ProjectWithBudget = Project & {
-  budgetCategories: BudgetCategoryWithLineItems[];
-};
-
-export type ProjectWithRelations = Project & {
-  budgetCategories: BudgetCategoryWithLineItems[];
-  contracts: ContractWithVendor[];
-  drawRequests: DrawRequestWithLineItems[];
-  documents: Document[];
-};
-
-export type ContractWithVendor = Contract & {
-  vendor: Vendor;
-};
-
-export type ContractWithRelations = Contract & {
-  vendor: Vendor;
-  project: Project;
-  lineItem: BudgetLineItem | null;
-};
-
 export type DrawLineItemWithBudget = DrawLineItem & {
   budgetLineItem: BudgetLineItem;
 };
 
 export type DrawRequestWithLineItems = DrawRequest & {
   lineItems: DrawLineItemWithBudget[];
-};
-
-export type DrawRequestWithRelations = DrawRequest & {
-  lineItems: DrawLineItemWithBudget[];
-  project: Project;
 };
 
 export interface PortfolioKPIs {
