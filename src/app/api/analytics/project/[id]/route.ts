@@ -89,7 +89,10 @@ export async function GET(
       }
 
       for (const item of category.lineItems) {
-        const itemActualCost = invoiceSpentByLineItem[item.id] || 0;
+        // Use the line item's actualCost field (editable by admin) as source of truth,
+        // falling back to invoice totals if actualCost is 0
+        const invoiceActual = invoiceSpentByLineItem[item.id] || 0;
+        const itemActualCost = item.actualCost > 0 ? item.actualCost : invoiceActual;
 
         categoryGroupMap[group].originalBudget += item.originalBudget;
         categoryGroupMap[group].revisedBudget += item.revisedBudget;
