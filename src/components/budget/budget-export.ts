@@ -14,8 +14,7 @@ export function exportBudgetToExcel(
       "Category Group": category.categoryGroup,
       Description: "",
       "Original Budget": "",
-      "Revised Budget": "",
-      "Committed Cost": "",
+      "Current Budget": "",
       "Actual Cost": "",
       Variance: "",
     });
@@ -26,8 +25,7 @@ export function exportBudgetToExcel(
         "Category Group": "",
         Description: li.description,
         "Original Budget": li.originalBudget,
-        "Revised Budget": li.revisedBudget,
-        "Committed Cost": li.committedCost,
+        "Current Budget": li.revisedBudget,
         "Actual Cost": li.actualCost,
         Variance: li.actualCost - li.revisedBudget,
       });
@@ -37,7 +35,6 @@ export function exportBudgetToExcel(
   // Totals row
   const totalOriginal = categories.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.originalBudget, 0), 0);
   const totalRevised = categories.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.revisedBudget, 0), 0);
-  const totalCommitted = categories.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.committedCost, 0), 0);
   const totalActual = categories.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.actualCost, 0), 0);
 
   rows.push({
@@ -45,8 +42,7 @@ export function exportBudgetToExcel(
     "Category Group": "",
     Description: "TOTAL",
     "Original Budget": totalOriginal,
-    "Revised Budget": totalRevised,
-    "Committed Cost": totalCommitted,
+    "Current Budget": totalRevised,
     "Actual Cost": totalActual,
     Variance: totalActual - totalRevised,
   });
@@ -59,8 +55,7 @@ export function exportBudgetToExcel(
     { wch: 18 }, // Category Group
     { wch: 35 }, // Description
     { wch: 16 }, // Original Budget
-    { wch: 16 }, // Revised Budget
-    { wch: 16 }, // Committed Cost
+    { wch: 16 }, // Current Budget
     { wch: 16 }, // Actual Cost
     { wch: 16 }, // Variance
   ];

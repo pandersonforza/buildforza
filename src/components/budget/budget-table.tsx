@@ -131,8 +131,7 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
             <TableRow>
               <TableHead className="w-[300px]">Description</TableHead>
               <TableHead className="text-right">Original</TableHead>
-              <TableHead className="text-right">Revised</TableHead>
-              <TableHead className="text-right">Committed</TableHead>
+              <TableHead className="text-right">Current</TableHead>
               <TableHead className="text-right">Actual</TableHead>
               <TableHead className="text-right">Variance</TableHead>
               <TableHead className="text-right">%</TableHead>
@@ -206,7 +205,6 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
                             </TableCell>
                             <TableCell className="text-right">{formatCurrency(catOriginal)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(catRevised)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(catCommitted)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(catActual)}</TableCell>
                             <TableCell className="text-right">
                               <CurrencyDisplay amount={catVariance} showVariance baseAmount={0} />
@@ -254,7 +252,6 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
                                   <TableCell className="pl-16 text-muted-foreground">{li.description}</TableCell>
                                   <TableCell className="text-right">{formatCurrency(li.originalBudget)}</TableCell>
                                   <TableCell className="text-right">{formatCurrency(li.revisedBudget)}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(li.committedCost)}</TableCell>
                                   <TableCell className="text-right">{formatCurrency(li.actualCost)}</TableCell>
                                   <TableCell className="text-right">
                                     <CurrencyDisplay amount={variance} showVariance baseAmount={0} />
@@ -300,7 +297,7 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
             })}
             {categories.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                   No budget categories. Add one to get started.
                 </TableCell>
               </TableRow>
@@ -317,7 +314,6 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
                   <TableCell>Total Budget</TableCell>
                   <TableCell className="text-right">{formatCurrency(totalOriginal)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(totalRevised)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totalCommitted)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(totalActual)}</TableCell>
                   <TableCell className="text-right">
                     <CurrencyDisplay amount={totalVariance} showVariance baseAmount={0} />
