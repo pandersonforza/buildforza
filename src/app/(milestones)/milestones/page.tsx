@@ -99,14 +99,6 @@ export default function MilestonesOverviewPage() {
             <p className="text-lg font-semibold text-amber-400">{formatCurrency(totalRemaining)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Progress</p>
-            <p className="text-lg font-semibold">
-              {completedCount} / {milestones.length} complete
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Status Pie Chart */}
