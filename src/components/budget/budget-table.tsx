@@ -16,10 +16,61 @@ import { BudgetLineItemForm } from "@/components/budget/budget-line-item-form";
 import { BudgetCategoryForm } from "@/components/budget/budget-category-form";
 import { useToast } from "@/components/ui/toast";
 import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { CATEGORY_GROUPS, CATEGORY_GROUP_ORDER, SUBCATEGORY_ORDER, LINE_ITEM_ORDER } from "@/lib/constants";
 import type { BudgetCategoryWithLineItems, BudgetLineItem } from "@/types";
+
+function EditableActualCell({
+  lineItem,
+  onSave,
+}: {
+  lineItem: BudgetLineItem;
+  onSave: (id: string, value: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(lineItem.actualCost.toString());
+
+  const handleSave = () => {
+    setEditing(false);
+    const num = parseFloat(value) || 0;
+    if (num !== lineItem.actualCost) {
+      onSave(lineItem.id, num);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <button
+        className="text-right w-full hover:bg-muted/50 rounded px-1 -mx-1 cursor-pointer"
+        onClick={() => {
+          setValue(lineItem.actualCost.toString());
+          setEditing(true);
+        }}
+        title="Click to edit actual cost"
+      >
+        {formatCurrency(lineItem.actualCost)}
+      </button>
+    );
+  }
+
+  return (
+    <Input
+      type="number"
+      step="0.01"
+      className="h-7 text-right text-sm w-[120px]"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={handleSave}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") handleSave();
+        if (e.key === "Escape") setEditing(false);
+      }}
+      autoFocus
+    />
+  );
+}
 
 interface BudgetTableProps {
   projectId: string;
@@ -56,7 +107,22 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
   const [deleteTarget, setDeleteTarget] = useState<{ type: "category" | "lineItem"; id: string } | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { toast } = useToast();
-  const { canEdit } = useAuth();
+  const { user, canEdit } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const handleUpdateActual = async (lineItemId: string, actualCost: number) => {
+    try {
+      const res = await fetch(`/api/budget-line-items/${lineItemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actualCost }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      onMutate();
+    } catch {
+      toast({ title: "Error", description: "Failed to update actual cost", variant: "destructive" });
+    }
+  };
 
   // Group categories by categoryGroup, sorted by defined order
   const grouped = useMemo<GroupedCategories[]>(() => {
@@ -319,7 +385,13 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
                                   <TableCell className="pl-16 text-muted-foreground">{li.description}</TableCell>
                                   <TableCell className="text-right">{formatCurrency(li.originalBudget)}</TableCell>
                                   <TableCell className="text-right">{formatCurrency(li.revisedBudget)}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(li.actualCost)}</TableCell>
+                                  <TableCell className="text-right">
+                                    {isAdmin ? (
+                                      <EditableActualCell lineItem={li} onSave={handleUpdateActual} />
+                                    ) : (
+                                      formatCurrency(li.actualCost)
+                                    )}
+                                  </TableCell>
                                   <TableCell className="text-right">
                                     <CurrencyDisplay amount={variance}  />
                                   </TableCell>
