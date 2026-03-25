@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { CurrencyDisplay } from "@/components/shared/currency-display";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { InvoiceUpload } from "@/components/invoices/invoice-upload";
-import { PayAppUpload } from "@/components/invoices/payapp-upload";
+import { PayAppEntry } from "@/components/invoices/payapp-entry";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -374,7 +374,7 @@ export function InvoiceList({
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setPayAppOpen(true)}>
               <FileText className="h-4 w-4 mr-2" />
-              Upload Pay App
+              Pay App Entry
             </Button>
             <Button onClick={() => setUploadOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -398,7 +398,7 @@ export function InvoiceList({
         onSuccess={onMutate}
       />
 
-      <PayAppUpload
+      <PayAppEntry
         open={payAppOpen}
         onOpenChange={setPayAppOpen}
         projectId={projectId}
