@@ -18,7 +18,7 @@ import { useToast } from "@/components/ui/toast";
 import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency, formatPercent } from "@/lib/utils";
-import { CATEGORY_GROUPS, CATEGORY_GROUP_ORDER } from "@/lib/constants";
+import { CATEGORY_GROUPS, CATEGORY_GROUP_ORDER, SUBCATEGORY_ORDER, LINE_ITEM_ORDER } from "@/lib/constants";
 import type { BudgetCategoryWithLineItems, BudgetLineItem } from "@/types";
 
 interface BudgetTableProps {
@@ -63,12 +63,20 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
     for (const cat of categories) {
       const group = cat.categoryGroup || "Other";
       if (!map.has(group)) map.set(group, []);
-      // Keep line items in creation order (by createdAt)
+      // Sort line items by the defined order, unknowns go to end
+      const order = LINE_ITEM_ORDER[cat.name] || [];
       const sortedCat = {
         ...cat,
-        lineItems: [...cat.lineItems].sort((a, b) =>
-          new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
-        ),
+        lineItems: [...cat.lineItems].sort((a, b) => {
+          const idxA = order.indexOf(a.description);
+          const idxB = order.indexOf(b.description);
+          // Items in the order list sort by their position
+          // Items not in the list sort to the end by creation date
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
+        }),
       };
       map.get(group)!.push(sortedCat);
     }
@@ -85,10 +93,16 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
       .filter((g) => map.has(g))
       .map((group) => {
         const cats = map.get(group)!;
-        // Sort subcategories by creation order too
-        cats.sort((a, b) =>
-          new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
-        );
+        // Sort subcategories by defined order, unknowns to end
+        const subOrder = SUBCATEGORY_ORDER[group] || [];
+        cats.sort((a, b) => {
+          const idxA = subOrder.indexOf(a.name);
+          const idxB = subOrder.indexOf(b.name);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          return new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime();
+        });
         const original = cats.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.originalBudget, 0), 0);
         const revised = cats.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.revisedBudget, 0), 0);
         const committed = cats.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.committedCost, 0), 0);
