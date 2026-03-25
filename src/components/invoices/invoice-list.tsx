@@ -416,121 +416,123 @@ export function InvoiceList({
       />
 
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Approve Invoice</DialogTitle>
-            <DialogDescription>
-              Review and edit the invoice details before approving.
-            </DialogDescription>
-          </DialogHeader>
-          {approvingInvoice?.filePath && (
-            <a
-              href={approvingInvoice.filePath.startsWith('http') ? `/api/invoices/file?url=${encodeURIComponent(approvingInvoice.filePath)}` : approvingInvoice.filePath}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              <FileText className="h-4 w-4" />
-              View Attached Invoice PDF
-            </a>
-          )}
-          {/* Pay App line items breakdown */}
-          {(() => {
-            const notes = approvingInvoice?.aiNotes || "";
-            const match = notes.match(/__payAppLineItems__([\s\S]+)$/);
-            if (!match) return null;
-            let payItems: { lineItemId: string; description: string; amount: number }[] = [];
-            try { payItems = JSON.parse(match[1]); } catch { return null; }
-            if (payItems.length === 0) return null;
-            return (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setPayAppItemsOpen(!payAppItemsOpen)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <span>Pay App Line Items ({payItems.length})</span>
-                  {payAppItemsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
-                {payAppItemsOpen && (
-                  <div className="max-h-48 overflow-y-auto"><table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-t border-border bg-muted/20 text-left text-muted-foreground">
-                        <th className="py-1.5 px-3">Description</th>
-                        <th className="py-1.5 px-3 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payItems.map((item, idx) => (
-                        <tr key={idx} className="border-t border-border/50">
-                          <td className="py-1.5 px-3">{item.description}</td>
-                          <td className="py-1.5 px-3 text-right">${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t-2 border-primary/20 font-semibold">
-                        <td className="py-1.5 px-3">Total</td>
-                        <td className="py-1.5 px-3 text-right text-primary">
-                          ${payItems.reduce((s, i) => s + i.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table></div>
-                )}
-              </div>
-            );
-          })()}
+        {(() => {
+          const notes = approvingInvoice?.aiNotes || "";
+          const match = notes.match(/__payAppLineItems__([\s\S]+)$/);
+          let payItems: { lineItemId: string; description: string; amount: number }[] = [];
+          if (match) { try { payItems = JSON.parse(match[1]); } catch { /* empty */ } }
+          const isPayApp = payItems.length > 0;
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="approve-vendor">Vendor Name</Label>
-              <Input
-                id="approve-vendor"
-                value={approveForm.vendorName}
-                onChange={(e) => setApproveForm({ ...approveForm, vendorName: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="approve-invoiceNumber">Invoice #</Label>
-              <Input
-                id="approve-invoiceNumber"
-                value={approveForm.invoiceNumber}
-                onChange={(e) => setApproveForm({ ...approveForm, invoiceNumber: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="approve-amount">Amount</Label>
-              <Input
-                id="approve-amount"
-                type="number"
-                step="0.01"
-                value={approveForm.amount}
-                onChange={(e) => setApproveForm({ ...approveForm, amount: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="approve-description">Description</Label>
-              <Textarea
-                id="approve-description"
-                value={approveForm.description}
-                onChange={(e) => setApproveForm({ ...approveForm, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setApproveDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              onClick={handleApprove}
-            >
-              Approve Invoice
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+          return (
+            <DialogContent className={`max-h-[85vh] overflow-y-auto ${isPayApp ? "max-w-4xl" : ""}`}>
+              <DialogHeader>
+                <DialogTitle>Approve {isPayApp ? "Pay Application" : "Invoice"}</DialogTitle>
+                <DialogDescription>
+                  Review and edit the details before approving.
+                </DialogDescription>
+              </DialogHeader>
+              {approvingInvoice?.filePath && (
+                <a
+                  href={approvingInvoice.filePath.startsWith('http') ? `/api/invoices/file?url=${encodeURIComponent(approvingInvoice.filePath)}` : approvingInvoice.filePath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  View Attached Invoice PDF
+                </a>
+              )}
+
+              <div className={isPayApp ? "grid grid-cols-2 gap-6" : ""}>
+                {/* Pay App line items — left side */}
+                {isPayApp && (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="px-3 py-2 text-sm font-medium bg-muted/30 border-b border-border">
+                      Line Items ({payItems.length})
+                    </div>
+                    <div className="max-h-[50vh] overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-background">
+                          <tr className="border-b border-border text-left text-muted-foreground">
+                            <th className="py-1.5 px-3">Description</th>
+                            <th className="py-1.5 px-3 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {payItems.map((item, idx) => (
+                            <tr key={idx} className="border-b border-border/50">
+                              <td className="py-1.5 px-3">{item.description}</td>
+                              <td className="py-1.5 px-3 text-right">${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 bg-background">
+                          <tr className="border-t-2 border-primary/20 font-semibold">
+                            <td className="py-1.5 px-3">Total</td>
+                            <td className="py-1.5 px-3 text-right text-primary">
+                              ${payItems.reduce((s, i) => s + i.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Form fields — right side (or full width for regular invoices) */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="approve-vendor">Vendor Name</Label>
+                    <Input
+                      id="approve-vendor"
+                      value={approveForm.vendorName}
+                      onChange={(e) => setApproveForm({ ...approveForm, vendorName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="approve-invoiceNumber">Invoice #</Label>
+                    <Input
+                      id="approve-invoiceNumber"
+                      value={approveForm.invoiceNumber}
+                      onChange={(e) => setApproveForm({ ...approveForm, invoiceNumber: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="approve-amount">Amount</Label>
+                    <Input
+                      id="approve-amount"
+                      type="number"
+                      step="0.01"
+                      value={approveForm.amount}
+                      onChange={(e) => setApproveForm({ ...approveForm, amount: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="approve-description">Description</Label>
+                    <Textarea
+                      id="approve-description"
+                      value={approveForm.description}
+                      onChange={(e) => setApproveForm({ ...approveForm, description: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setApproveDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={handleApprove}
+                >
+                  Approve {isPayApp ? "Pay App" : "Invoice"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          );
+        })()}
       </Dialog>
 
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
