@@ -18,7 +18,7 @@ import { useToast } from "@/components/ui/toast";
 import { ChevronDown, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency, formatPercent } from "@/lib/utils";
-import { CATEGORY_GROUPS } from "@/lib/constants";
+import { CATEGORY_GROUPS, CATEGORY_GROUP_ORDER } from "@/lib/constants";
 import type { BudgetCategoryWithLineItems, BudgetLineItem } from "@/types";
 
 interface BudgetTableProps {
@@ -56,24 +56,39 @@ export function BudgetTable({ projectId, categories, onMutate }: BudgetTableProp
   const { toast } = useToast();
   const { canEdit } = useAuth();
 
-  // Group categories by categoryGroup
+  // Group categories by categoryGroup, sorted by defined order
   const grouped = useMemo<GroupedCategories[]>(() => {
-    const groupOrder = [...CATEGORY_GROUPS];
     const map = new Map<string, BudgetCategoryWithLineItems[]>();
 
     for (const cat of categories) {
       const group = cat.categoryGroup || "Other";
       if (!map.has(group)) map.set(group, []);
-      map.get(group)!.push(cat);
+      // Keep line items in creation order (by createdAt)
+      const sortedCat = {
+        ...cat,
+        lineItems: [...cat.lineItems].sort((a, b) =>
+          new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
+        ),
+      };
+      map.get(group)!.push(sortedCat);
     }
 
-    // Sort groups by CATEGORY_GROUPS order, then any extras
-    const allGroups = [...new Set([...groupOrder, ...map.keys()])];
+    // Sort groups by CATEGORY_GROUP_ORDER, unknowns go to end
+    const allGroups = [...new Set([...CATEGORY_GROUPS, ...map.keys()])];
+    allGroups.sort((a, b) => {
+      const orderA = CATEGORY_GROUP_ORDER[a] ?? 999;
+      const orderB = CATEGORY_GROUP_ORDER[b] ?? 999;
+      return orderA - orderB;
+    });
 
     return allGroups
       .filter((g) => map.has(g))
       .map((group) => {
         const cats = map.get(group)!;
+        // Sort subcategories by creation order too
+        cats.sort((a, b) =>
+          new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
+        );
         const original = cats.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.originalBudget, 0), 0);
         const revised = cats.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.revisedBudget, 0), 0);
         const committed = cats.reduce((s, c) => s + c.lineItems.reduce((a, li) => a + li.committedCost, 0), 0);

@@ -21,17 +21,27 @@ export const PROJECT_STAGES = [
 ] as const;
 
 export const CATEGORY_GROUPS = [
-  "Hard Costs",
-  "Soft Costs",
-  "Financing",
   "Land",
+  "Soft Costs",
+  "Hard Costs",
+  "Outside Costs",
+  "Financing Costs",
 ] as const;
 
+export const CATEGORY_GROUP_ORDER: Record<string, number> = {
+  "Land": 0,
+  "Soft Costs": 1,
+  "Hard Costs": 2,
+  "Outside Costs": 3,
+  "Financing Costs": 4,
+};
+
 export const DEFAULT_SUBCATEGORIES: Record<string, string[]> = {
-  "Hard Costs": ["Building Costs", "Site Costs", "Equipment", "Signage", "General Conditions"],
-  "Soft Costs": ["Design Fees", "Third Party DD", "Entitlements", "Permits & Fees", "Outside Costs"],
-  "Financing": ["Loan Fees", "Interest", "Closing Costs"],
   "Land": ["Acquisition", "Due Diligence"],
+  "Soft Costs": ["Design Fees", "Third Party DD", "Entitlements", "Permits & Fees"],
+  "Hard Costs": ["Building Costs", "Site Costs", "Equipment", "Signage", "General Conditions"],
+  "Outside Costs": ["Outside Costs"],
+  "Financing Costs": ["Loan Fees", "Interest", "Closing Costs"],
 };
 
 export const CONTRACT_TYPES = [
