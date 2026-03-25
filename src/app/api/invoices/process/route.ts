@@ -126,22 +126,29 @@ Here are the known vendors:
 
 ${vendorContext || '  (No vendors available)'}
 
-Analyze the provided invoice PDF and extract the following information. Return ONLY valid JSON with no additional text or markdown formatting.
+Analyze the provided PDF. It may contain ONE or MULTIPLE invoices. Carefully check for page breaks, different vendor names, different invoice numbers, or other indicators that separate invoices exist within the document.
 
-Required JSON structure:
+Return ONLY valid JSON with no additional text or markdown formatting.
+
+Required JSON structure — ALWAYS return an object with an "invoices" array, even for a single invoice:
 {
-  "vendorName": "string - the vendor/company name on the invoice",
-  "invoiceNumber": "string or null - the invoice number if present",
-  "amount": number - the total amount due (numeric, no currency symbols),
-  "date": "string - invoice date in YYYY-MM-DD format",
-  "description": "string - brief description of goods/services",
-  "suggestedProjectId": "string or null - the ID of the best matching project from the list above",
-  "suggestedBudgetLineItemId": "string or null - the ID of the best matching budget line item from the list above",
-  "confidence": number between 0 and 1 - how confident you are in the project/line item match,
-  "reasoning": "string - brief explanation of why you chose this project and line item"
+  "invoices": [
+    {
+      "vendorName": "string - the vendor/company name on the invoice",
+      "invoiceNumber": "string or null - the invoice number if present",
+      "amount": number - the total amount due (numeric, no currency symbols),
+      "date": "string - invoice date in YYYY-MM-DD format",
+      "description": "string - brief description of goods/services",
+      "suggestedProjectId": "string or null - the ID of the best matching project from the list above",
+      "suggestedBudgetLineItemId": "string or null - the ID of the best matching budget line item from the list above",
+      "confidence": number between 0 and 1 - how confident you are in the project/line item match,
+      "reasoning": "string - brief explanation of why you chose this project and line item"
+    }
+  ]
 }
 
 Guidelines:
+- If the PDF contains multiple invoices (different vendors, invoice numbers, or clearly separated sections), extract EACH one as a separate entry in the array.
 - Match vendors to known vendors when possible (fuzzy matching on name/company).
 - Match to projects and line items based on the description, vendor category, and amount.
 - If no good match exists, set suggestedProjectId and suggestedBudgetLineItemId to null with low confidence.
@@ -188,9 +195,9 @@ Guidelines:
       jsonText = jsonMatch[1].trim();
     }
 
-    let result: ProcessedInvoice;
+    let parsed: { invoices?: ProcessedInvoice[] } & ProcessedInvoice;
     try {
-      result = JSON.parse(jsonText);
+      parsed = JSON.parse(jsonText);
     } catch {
       console.error('Failed to parse AI response as JSON:', jsonText);
       return NextResponse.json(
@@ -199,14 +206,31 @@ Guidelines:
       );
     }
 
-    if (!result.vendorName || result.amount === undefined || !result.date) {
+    // Normalize: always return { invoices: [...] }
+    let invoices: ProcessedInvoice[];
+    if (Array.isArray(parsed.invoices)) {
+      invoices = parsed.invoices;
+    } else if (parsed.vendorName) {
+      // Single invoice returned as flat object (backward compat)
+      invoices = [parsed];
+    } else {
       return NextResponse.json(
-        { error: 'AI response is missing required fields (vendorName, amount, date).' },
+        { error: 'AI response is missing required fields.' },
         { status: 502 }
       );
     }
 
-    return NextResponse.json(result);
+    // Validate each invoice
+    for (const inv of invoices) {
+      if (!inv.vendorName || inv.amount === undefined || !inv.date) {
+        return NextResponse.json(
+          { error: 'AI response is missing required fields (vendorName, amount, date) on one or more invoices.' },
+          { status: 502 }
+        );
+      }
+    }
+
+    return NextResponse.json({ invoices });
   } catch (error) {
     console.error('Failed to process invoice:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';

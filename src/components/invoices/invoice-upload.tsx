@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SelectNative } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
-import { Loader2, Upload, FileText, Sparkles } from "lucide-react";
+import { Loader2, Upload, FileText, Sparkles, Check } from "lucide-react";
 import { useAuth, type AuthUser } from "@/hooks/use-auth";
 import type { AIInvoiceResult, Project, BudgetLineItemWithCategory } from "@/types";
 
@@ -26,7 +26,7 @@ interface UserOption {
   email: string;
 }
 
-type UploadStep = "upload" | "processing" | "review" | "saving";
+type UploadStep = "upload" | "processing" | "review" | "multi-review" | "saving";
 
 interface InvoiceUploadProps {
   open: boolean;
@@ -51,6 +51,8 @@ export function InvoiceUpload({
 
   // AI result + form state
   const [aiResult, setAiResult] = useState<AIInvoiceResult | null>(null);
+  const [multiInvoices, setMultiInvoices] = useState<AIInvoiceResult[]>([]);
+  const [multiSelected, setMultiSelected] = useState<boolean[]>([]);
   const [vendorName, setVendorName] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [amount, setAmount] = useState<number>(0);
@@ -76,6 +78,8 @@ export function InvoiceUpload({
         setStep("upload");
         setSelectedFile(null);
         setAiResult(null);
+        setMultiInvoices([]);
+        setMultiSelected([]);
         setVendorName("");
         setInvoiceNumber("");
         setAmount(0);
@@ -235,29 +239,31 @@ export function InvoiceUpload({
       }
 
       const raw = await processRes.json();
-      // Map AI response field name to our type
-      const result: AIInvoiceResult = {
-        ...raw,
-        suggestedLineItemId: raw.suggestedLineItemId || raw.suggestedBudgetLineItemId || null,
-      };
-      setAiResult(result);
 
-      // Populate form with AI results
-      setVendorName(result.vendorName);
-      setInvoiceNumber(result.invoiceNumber ?? "");
-      setAmount(result.amount);
-      setDate(result.date);
-      setDescription(result.description);
+      // Handle multi-invoice response
+      const rawInvoices: AIInvoiceResult[] = (raw.invoices || [raw]).map((inv: Record<string, unknown>) => ({
+        ...inv,
+        suggestedLineItemId: inv.suggestedLineItemId || inv.suggestedBudgetLineItemId || null,
+      }));
 
-      if (result.suggestedProjectId) {
-        setSelectedProjectId(result.suggestedProjectId);
+      if (rawInvoices.length > 1) {
+        // Multiple invoices found
+        setMultiInvoices(rawInvoices);
+        setMultiSelected(rawInvoices.map(() => true));
+        setStep("multi-review");
+      } else {
+        // Single invoice — use existing review flow
+        const result = rawInvoices[0];
+        setAiResult(result);
+        setVendorName(result.vendorName);
+        setInvoiceNumber(result.invoiceNumber ?? "");
+        setAmount(result.amount);
+        setDate(result.date);
+        setDescription(result.description);
+        if (result.suggestedProjectId) setSelectedProjectId(result.suggestedProjectId);
+        if (result.suggestedLineItemId) setSelectedLineItemId(result.suggestedLineItemId);
+        setStep("review");
       }
-
-      if (result.suggestedLineItemId) {
-        setSelectedLineItemId(result.suggestedLineItemId);
-      }
-
-      setStep("review");
     } catch (err) {
       toast({
         title: "Processing failed",
@@ -363,6 +369,71 @@ export function InvoiceUpload({
     }
   };
 
+  // Save multiple invoices
+  const handleSaveMulti = async (submitForApproval = false) => {
+    const selected = multiInvoices.filter((_, i) => multiSelected[i]);
+    if (selected.length === 0) {
+      toast({ title: "No invoices selected", variant: "destructive" });
+      return;
+    }
+
+    if (submitForApproval && (!approverId || !submittedBy.trim())) {
+      toast({ title: "Approver required", variant: "destructive" });
+      return;
+    }
+
+    setStep("saving");
+    try {
+      let created = 0;
+      const approverUser = users.find((u) => u.id === approverId);
+
+      for (const inv of selected) {
+        const body: Record<string, unknown> = {
+          vendorName: inv.vendorName,
+          invoiceNumber: inv.invoiceNumber || null,
+          amount: inv.amount,
+          date: inv.date,
+          description: inv.description,
+          projectId: inv.suggestedProjectId || selectedProjectId || null,
+          budgetLineItemId: inv.suggestedLineItemId || null,
+          filePath,
+          aiConfidence: inv.confidence ?? null,
+          aiNotes: inv.reasoning ?? null,
+        };
+
+        if (submitForApproval) {
+          body.status = "Submitted";
+          body.approver = approverUser?.name ?? "";
+          body.approverId = approverId;
+          body.submittedBy = submittedBy.trim();
+          body.submittedById = user?.id ?? null;
+          body.submittedDate = new Date().toISOString();
+        }
+
+        const res = await fetch("/api/invoices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) created++;
+      }
+
+      toast({
+        title: submitForApproval ? "Invoices submitted for approval" : "Invoices created",
+        description: `Created ${created} invoice${created !== 1 ? "s" : ""}`,
+      });
+      onSuccess();
+      handleOpenChange(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to save invoices",
+        variant: "destructive",
+      });
+      setStep("multi-review");
+    }
+  };
+
   const confidenceBadge = (confidence: number) => {
     const pct = Math.round(confidence * 100);
     const color =
@@ -396,20 +467,23 @@ export function InvoiceUpload({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`max-h-[90vh] overflow-y-auto ${step === "multi-review" ? "max-w-4xl" : "max-w-2xl"}`}>
         <DialogHeader>
           <DialogTitle>
             {step === "upload" && "Upload Invoice"}
-            {step === "processing" && "Processing Invoice"}
+            {step === "processing" && "Processing Invoice(s)"}
             {step === "review" && "Review Invoice Details"}
-            {step === "saving" && "Saving Invoice"}
+            {step === "multi-review" && `Review ${multiInvoices.length} Invoices Found`}
+            {step === "saving" && "Saving Invoice(s)"}
           </DialogTitle>
           <DialogDescription>
-            {step === "upload" && "Upload a PDF invoice to extract data with AI."}
-            {step === "processing" && "Please wait while we analyze your invoice."}
+            {step === "upload" && "Upload a PDF — it can contain one or multiple invoices."}
+            {step === "processing" && "Please wait while we analyze your invoice(s)."}
             {step === "review" &&
               "Review and confirm the AI-extracted information below."}
-            {step === "saving" && "Saving your invoice..."}
+            {step === "multi-review" &&
+              "Multiple invoices were detected. Select which ones to create."}
+            {step === "saving" && "Saving your invoice(s)..."}
           </DialogDescription>
         </DialogHeader>
 
@@ -661,11 +735,101 @@ export function InvoiceUpload({
           </div>
         )}
 
-        {/* Step 4: Saving */}
+        {/* Step: Multi-invoice review */}
+        {step === "multi-review" && multiInvoices.length > 0 && (
+          <div className="space-y-4">
+            <div className="overflow-x-auto border border-border rounded-lg">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30 text-left text-muted-foreground">
+                    <th className="py-2 px-3 w-8"></th>
+                    <th className="py-2 px-3">Vendor</th>
+                    <th className="py-2 px-3">Invoice #</th>
+                    <th className="py-2 px-3 text-right">Amount</th>
+                    <th className="py-2 px-3">Date</th>
+                    <th className="py-2 px-3">Description</th>
+                    <th className="py-2 px-3">Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {multiInvoices.map((inv, idx) => (
+                    <tr key={idx} className={`border-b border-border/50 ${multiSelected[idx] ? "" : "opacity-40"}`}>
+                      <td className="py-2 px-3">
+                        <button onClick={() => setMultiSelected(prev => prev.map((v, i) => i === idx ? !v : v))}>
+                          <div className={`h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
+                            multiSelected[idx] ? "bg-primary border-primary" : "border-muted-foreground/40"
+                          }`}>
+                            {multiSelected[idx] && <Check className="h-2.5 w-2.5 text-white" />}
+                          </div>
+                        </button>
+                      </td>
+                      <td className="py-2 px-3 font-medium">{inv.vendorName}</td>
+                      <td className="py-2 px-3">{inv.invoiceNumber || "—"}</td>
+                      <td className="py-2 px-3 text-right">${inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="py-2 px-3">{inv.date}</td>
+                      <td className="py-2 px-3 max-w-[200px] truncate">{inv.description}</td>
+                      <td className="py-2 px-3">{confidenceBadge(inv.confidence)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-primary/20 font-semibold">
+                    <td className="py-2 px-3"></td>
+                    <td className="py-2 px-3" colSpan={2}>
+                      {multiSelected.filter(Boolean).length} of {multiInvoices.length} selected
+                    </td>
+                    <td className="py-2 px-3 text-right text-primary">
+                      ${multiInvoices.filter((_, i) => multiSelected[i]).reduce((s, inv) => s + inv.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-2 px-3" colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            {/* Project selection for unmatched invoices */}
+            {!projectId && (
+              <div className="space-y-2">
+                <Label>Default Project (for invoices without a match)</Label>
+                <SelectNative
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  placeholder="Select a project"
+                  options={projectOptions}
+                />
+              </div>
+            )}
+
+            {/* Approval */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Assign Approver</Label>
+                <SelectNative
+                  value={approverId}
+                  onChange={(e) => setApproverId(e.target.value)}
+                  placeholder="Select an approver"
+                  options={approverOptions}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Submitted By</Label>
+                <Input value={submittedBy} disabled className="bg-muted" />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => handleSaveMulti(false)}>Save as Drafts</Button>
+              <Button onClick={() => handleSaveMulti(true)}>Submit All for Approval</Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step: Saving */}
         {step === "saving" && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-            <p className="text-sm font-medium">Saving invoice...</p>
+            <p className="text-sm font-medium">Saving invoice(s)...</p>
           </div>
         )}
       </DialogContent>
