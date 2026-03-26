@@ -139,13 +139,13 @@ function TrackRecordCard({ project, onMutate }: { project: Record<string, unknow
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    finalBudget: (project.finalBudget as number) ?? "",
-    finalCost: (project.finalCost as number) ?? "",
-    irr: (project.irr as number) ?? "",
-    equityMultiple: (project.equityMultiple as number) ?? "",
-    profitAmount: (project.profitAmount as number) ?? "",
-    holdPeriodMonths: (project.holdPeriodMonths as number) ?? "",
+  const [form, setForm] = useState<Record<string, string | number>>({
+    finalBudget: project.finalBudget != null ? String(project.finalBudget) : "",
+    finalCost: project.finalCost != null ? String(project.finalCost) : "",
+    irr: project.irr != null ? String(project.irr) : "",
+    equityMultiple: project.equityMultiple != null ? String(project.equityMultiple) : "",
+    profitAmount: project.profitAmount != null ? String(project.profitAmount) : "",
+    holdPeriodMonths: project.holdPeriodMonths != null ? String(project.holdPeriodMonths) : "",
     completionNotes: (project.completionNotes as string) ?? "",
   });
 
