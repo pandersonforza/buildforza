@@ -104,6 +104,8 @@ export function InvoiceUpload({
         setTotalFiles(0);
         setAiResult(null);
         setReviewedInvoices([]);
+        setProcessedFiles([]);
+        setProcessingProgress(0);
         setMultiInvoices([]);
         setMultiSelected([]);
         setVendorName("");
@@ -231,70 +233,112 @@ export function InvoiceUpload({
     if (files && files.length > 0) handleFilesSelect(files);
   };
 
-  // Process a single file (upload + AI)
-  const processFile = async (file: File) => {
+  // Processed results for each file (stored after batch AI processing)
+  interface ProcessedFile {
+    aiResult: AIInvoiceResult;
+    filePath: string;
+    fileName: string;
+  }
+  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
+  const [processingProgress, setProcessingProgress] = useState(0);
+
+  // Load a processed result into the form for review
+  const loadProcessedFile = (index: number, files: ProcessedFile[]) => {
+    const pf = files[index];
+    setAiResult(pf.aiResult);
+    setFilePath(pf.filePath);
+    setVendorName(pf.aiResult.vendorName);
+    setInvoiceNumber(pf.aiResult.invoiceNumber ?? "");
+    setAmount(pf.aiResult.amount);
+    setDate(pf.aiResult.date);
+    setDescription(pf.aiResult.description);
+    if (pf.aiResult.suggestedProjectId) setSelectedProjectId(pf.aiResult.suggestedProjectId);
+    if (pf.aiResult.suggestedLineItemId) setSelectedLineItemId(pf.aiResult.suggestedLineItemId);
+    else setSelectedLineItemId("");
+  };
+
+  // Upload ALL files and process with AI in parallel, then start review
+  const handleUploadAndProcess = async () => {
+    const queue = fileQueueRef.current;
+    if (queue.length === 0) return;
+
     setStep("processing");
+    setProcessingProgress(0);
 
     try {
       const { upload } = await import("@vercel/blob/client");
-      const originalName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const pathname = `invoices/${Date.now()}-${originalName}`;
 
-      const blob = await upload(pathname, file, {
-        access: "private",
-        handleUploadUrl: "/api/invoices/upload",
-      });
+      // Process all files concurrently
+      const results = await Promise.all(
+        queue.map(async (file, idx) => {
+          // Upload
+          const originalName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const pathname = `invoices/${Date.now()}-${idx}-${originalName}`;
+          const blob = await upload(pathname, file, {
+            access: "private",
+            handleUploadUrl: "/api/invoices/upload",
+          });
 
-      setFilePath(blob.url);
+          // Process with AI
+          const processRes = await fetch("/api/invoices/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filePath: blob.url }),
+          });
 
-      // Process with AI
-      const processRes = await fetch("/api/invoices/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filePath: blob.url }),
-      });
+          if (!processRes.ok) {
+            const err = await processRes.json().catch(() => ({}));
+            throw new Error(`Failed to process ${file.name}: ${err.error || "Unknown error"}`);
+          }
 
-      if (!processRes.ok) {
-        const err = await processRes.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to process invoice");
+          const raw = await processRes.json();
+          const invoices: AIInvoiceResult[] = (raw.invoices || [raw]).map((inv: Record<string, unknown>) => ({
+            ...inv,
+            suggestedLineItemId: inv.suggestedLineItemId || inv.suggestedBudgetLineItemId || null,
+          }));
+
+          setProcessingProgress((prev) => prev + 1);
+
+          // If a single PDF contains multiple invoices, expand them
+          return invoices.map((ai) => ({
+            aiResult: ai,
+            filePath: blob.url,
+            fileName: file.name,
+          }));
+        })
+      );
+
+      // Flatten in case any PDF had multiple invoices
+      const allProcessed = results.flat();
+
+      if (allProcessed.length === 0) {
+        throw new Error("No invoices could be extracted");
       }
 
-      const raw = await processRes.json();
-      const rawInvoices: AIInvoiceResult[] = (raw.invoices || [raw]).map((inv: Record<string, unknown>) => ({
-        ...inv,
-        suggestedLineItemId: inv.suggestedLineItemId || inv.suggestedBudgetLineItemId || null,
-      }));
-
-      if (rawInvoices.length > 1) {
-        setMultiInvoices(rawInvoices);
-        setMultiSelected(rawInvoices.map(() => true));
+      // If we ended up with multiple from multi-invoice PDFs and only 1 file, use multi-review
+      if (queue.length === 1 && allProcessed.length > 1) {
+        setMultiInvoices(allProcessed.map((p) => p.aiResult));
+        setMultiSelected(allProcessed.map(() => true));
         setStep("multi-review");
-      } else {
-        const result = rawInvoices[0];
-        setAiResult(result);
-        setVendorName(result.vendorName);
-        setInvoiceNumber(result.invoiceNumber ?? "");
-        setAmount(result.amount);
-        setDate(result.date);
-        setDescription(result.description);
-        if (result.suggestedProjectId) setSelectedProjectId(result.suggestedProjectId);
-        if (result.suggestedLineItemId) setSelectedLineItemId(result.suggestedLineItemId);
-        setStep("review");
+        return;
       }
+
+      // Store all processed files and start reviewing the first one
+      setProcessedFiles(allProcessed);
+      setTotalFiles(allProcessed.length);
+      setCurrentFileIndex(0);
+      currentFileIndexRef.current = 0;
+      fileQueueRef.current = queue; // keep for ref
+      loadProcessedFile(0, allProcessed);
+      setStep("review");
     } catch (err) {
       toast({
         title: "Processing failed",
-        description: err instanceof Error ? err.message : "Could not process invoice",
+        description: err instanceof Error ? err.message : "Could not process invoices",
         variant: "destructive",
       });
       setStep("upload");
     }
-  };
-
-  // Upload and process current file
-  const handleUploadAndProcess = async () => {
-    if (!selectedFile) return;
-    await processFile(selectedFile);
   };
 
   // Capture current form data as a reviewed invoice
@@ -321,7 +365,7 @@ export function InvoiceUpload({
     };
   };
 
-  // "Next" — save current form data and advance to next file
+  // "Next" — save current form data and advance to next processed file
   const handleNext = () => {
     const invoice = captureCurrentInvoice();
     if (!invoice) return;
@@ -329,23 +373,11 @@ export function InvoiceUpload({
     const updated = [...reviewedInvoices, invoice];
     setReviewedInvoices(updated);
 
-    // Advance to next file
+    // Advance to next already-processed file (instant, no AI wait)
     const nextIndex = currentFileIndexRef.current + 1;
-    const queue = fileQueueRef.current;
     currentFileIndexRef.current = nextIndex;
     setCurrentFileIndex(nextIndex);
-    const nextFile = queue[nextIndex];
-    setSelectedFile(nextFile);
-    setAiResult(null);
-    setFilePath("");
-    setVendorName("");
-    setInvoiceNumber("");
-    setAmount(0);
-    setDate("");
-    setDescription("");
-    setSelectedLineItemId("");
-    setStep("processing");
-    processFile(nextFile);
+    loadProcessedFile(nextIndex, processedFiles);
   };
 
   // "Submit" — save current + submit all reviewed invoices
@@ -510,7 +542,7 @@ export function InvoiceUpload({
     .filter((u) => u.id !== user?.id)
     .map((u) => ({ value: u.id, label: u.name }));
 
-  const isLastFile = currentFileIndex >= fileQueueRef.current.length - 1;
+  const isLastFile = processedFiles.length <= 1 || currentFileIndex >= processedFiles.length - 1;
 
   if (!canEdit) return null;
 
@@ -608,10 +640,22 @@ export function InvoiceUpload({
         {step === "processing" && (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-            <p className="text-sm font-medium">Analyzing invoice with AI...</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              This may take a few seconds
+            <p className="text-sm font-medium">
+              {totalFiles > 1
+                ? `Analyzing invoices with AI... (${processingProgress} of ${totalFiles})`
+                : "Analyzing invoice with AI..."}
             </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalFiles > 1 ? "All files are being processed in parallel" : "This may take a few seconds"}
+            </p>
+            {totalFiles > 1 && (
+              <div className="w-48 h-1.5 bg-muted rounded-full mt-3 overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${(processingProgress / totalFiles) * 100}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
 
