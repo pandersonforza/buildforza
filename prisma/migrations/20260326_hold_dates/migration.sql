@@ -1,0 +1,2 @@
+ALTER TABLE "Project" ADD COLUMN "holdStartDate" TIMESTAMP(3);
+ALTER TABLE "Project" ADD COLUMN "holdEndDate" TIMESTAMP(3);

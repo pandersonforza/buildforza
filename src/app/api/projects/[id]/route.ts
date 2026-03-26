@@ -87,6 +87,8 @@ export async function PUT(
         ...(body.equityMultiple !== undefined && { equityMultiple: body.equityMultiple }),
         ...(body.profitAmount !== undefined && { profitAmount: body.profitAmount }),
         ...(body.holdPeriodMonths !== undefined && { holdPeriodMonths: body.holdPeriodMonths }),
+        ...(body.holdStartDate !== undefined && { holdStartDate: body.holdStartDate ? new Date(body.holdStartDate) : null }),
+        ...(body.holdEndDate !== undefined && { holdEndDate: body.holdEndDate ? new Date(body.holdEndDate) : null }),
         ...(body.completionNotes !== undefined && { completionNotes: body.completionNotes }),
       },
     });

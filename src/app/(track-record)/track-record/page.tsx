@@ -133,7 +133,7 @@ export default function TrackRecordPage() {
                   <p className="text-sm text-muted-foreground">Avg Hold Period</p>
                 </div>
                 <p className="text-3xl font-bold">
-                  {summary?.avgHoldPeriod != null ? `${Math.round(summary.avgHoldPeriod)} mo` : "—"}
+                  {summary?.avgHoldPeriod != null ? `${Math.round(summary.avgHoldPeriod)} days` : "—"}
                 </p>
               </CardContent>
             </Card>
@@ -185,7 +185,7 @@ export default function TrackRecordPage() {
                           <td className="py-2 px-3 text-right">{p.irr != null ? `${p.irr.toFixed(1)}%` : "—"}</td>
                           <td className="py-2 px-3 text-right">{p.equityMultiple != null ? `${p.equityMultiple.toFixed(2)}x` : "—"}</td>
                           <td className="py-2 px-3 text-right">{p.profitAmount != null ? formatCurrency(p.profitAmount) : "—"}</td>
-                          <td className="py-2 px-3 text-right">{p.holdPeriodMonths != null ? `${p.holdPeriodMonths} mo` : "—"}</td>
+                          <td className="py-2 px-3 text-right">{p.holdPeriodMonths != null ? `${p.holdPeriodMonths} days` : "—"}</td>
                         </tr>
                       );
                     })}

@@ -82,6 +82,8 @@ model Project {
   equityMultiple   Float?
   profitAmount     Float?
   holdPeriodMonths Int?
+  holdStartDate    DateTime?
+  holdEndDate      DateTime?
   completionNotes  String?
 
   budgetCategories BudgetCategory[]

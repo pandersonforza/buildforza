@@ -145,7 +145,8 @@ function TrackRecordCard({ project, onMutate }: { project: Record<string, unknow
     irr: project.irr != null ? String(project.irr) : "",
     equityMultiple: project.equityMultiple != null ? String(project.equityMultiple) : "",
     profitAmount: project.profitAmount != null ? String(project.profitAmount) : "",
-    holdPeriodMonths: project.holdPeriodMonths != null ? String(project.holdPeriodMonths) : "",
+    holdStartDate: project.holdStartDate ? String(project.holdStartDate).split("T")[0] : "",
+    holdEndDate: project.holdEndDate ? String(project.holdEndDate).split("T")[0] : "",
     completionNotes: (project.completionNotes as string) ?? "",
   });
 
@@ -158,7 +159,15 @@ function TrackRecordCard({ project, onMutate }: { project: Record<string, unknow
       if (form.irr !== "") body.irr = Number(form.irr);
       if (form.equityMultiple !== "") body.equityMultiple = Number(form.equityMultiple);
       if (form.profitAmount !== "") body.profitAmount = Number(form.profitAmount);
-      if (form.holdPeriodMonths !== "") body.holdPeriodMonths = Number(form.holdPeriodMonths);
+      if (form.holdStartDate !== "") body.holdStartDate = form.holdStartDate;
+      if (form.holdEndDate !== "") body.holdEndDate = form.holdEndDate;
+      // Compute hold period in days and store as holdPeriodMonths (legacy, now days)
+      if (form.holdStartDate && form.holdEndDate) {
+        const start = new Date(form.holdStartDate as string);
+        const end = new Date(form.holdEndDate as string);
+        const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        body.holdPeriodMonths = days;
+      }
       body.completionNotes = form.completionNotes;
       body.completionDate = new Date().toISOString();
 
@@ -228,7 +237,7 @@ function TrackRecordCard({ project, onMutate }: { project: Record<string, unknow
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Hold Period</p>
-                <p className="font-semibold">{project.holdPeriodMonths != null ? `${project.holdPeriodMonths} months` : "—"}</p>
+                <p className="font-semibold">{project.holdPeriodMonths != null ? `${project.holdPeriodMonths} days` : "—"}</p>
               </div>
             </div>
           ) : (
@@ -275,8 +284,12 @@ function TrackRecordCard({ project, onMutate }: { project: Record<string, unknow
             <Input id="tr-profit" type="number" step="0.01" value={form.profitAmount} onChange={(e) => setForm((f) => ({ ...f, profitAmount: e.target.value }))} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="tr-hold">Hold Period (months)</Label>
-            <Input id="tr-hold" type="number" value={form.holdPeriodMonths} onChange={(e) => setForm((f) => ({ ...f, holdPeriodMonths: e.target.value }))} />
+            <Label htmlFor="tr-holdStart">Hold Start Date</Label>
+            <Input id="tr-holdStart" type="date" value={form.holdStartDate} onChange={(e) => setForm((f) => ({ ...f, holdStartDate: e.target.value }))} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="tr-holdEnd">Hold End Date</Label>
+            <Input id="tr-holdEnd" type="date" value={form.holdEndDate} onChange={(e) => setForm((f) => ({ ...f, holdEndDate: e.target.value }))} />
           </div>
         </div>
         <div className="space-y-1 mt-4">
