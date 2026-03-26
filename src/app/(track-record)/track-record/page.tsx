@@ -78,62 +78,62 @@ export default function TrackRecordPage() {
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Completed</p>
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Completed Projects</p>
                 </div>
-                <p className="text-2xl font-bold">{summary?.count ?? 0}</p>
+                <p className="text-3xl font-bold">{summary?.count ?? 0}</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Avg IRR</p>
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Avg IRR</p>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-3xl font-bold">
                   {summary?.avgIrr != null ? `${summary.avgIrr.toFixed(1)}%` : "—"}
                 </p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Total Profit</p>
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Total Profit</p>
                 </div>
-                <p className="text-2xl font-bold">{formatCurrency(summary?.totalProfit ?? 0)}</p>
+                <p className="text-3xl font-bold">{formatCurrency(summary?.totalProfit ?? 0)}</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  <p className="text-xs text-muted-foreground">Under Budget</p>
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                  <p className="text-sm text-muted-foreground">Under Budget</p>
                 </div>
-                <p className="text-2xl font-bold">{summary?.underBudget ?? 0}</p>
+                <p className="text-3xl font-bold">{summary?.underBudget ?? 0}</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingDown className="h-4 w-4 text-red-500" />
-                  <p className="text-xs text-muted-foreground">Over Budget</p>
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown className="h-5 w-5 text-red-500" />
+                  <p className="text-sm text-muted-foreground">Over Budget</p>
                 </div>
-                <p className="text-2xl font-bold">{summary?.overBudget ?? 0}</p>
+                <p className="text-3xl font-bold">{summary?.overBudget ?? 0}</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Avg Hold</p>
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Avg Hold Period</p>
                 </div>
-                <p className="text-2xl font-bold">
-                  {summary?.avgHoldPeriod != null ? `${Math.round(summary.avgHoldPeriod)}mo` : "—"}
+                <p className="text-3xl font-bold">
+                  {summary?.avgHoldPeriod != null ? `${Math.round(summary.avgHoldPeriod)} mo` : "—"}
                 </p>
               </CardContent>
             </Card>
