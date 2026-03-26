@@ -236,10 +236,10 @@ function TrackRecordCard({ project, onMutate }: { project: Record<string, unknow
               No track record stats entered yet.{isAdmin ? " Click \"Enter Stats\" to add completion data." : ""}
             </p>
           )}
-          {project.completionNotes && (
+          {typeof project.completionNotes === "string" && project.completionNotes && (
             <div className="mt-4 pt-4 border-t border-border">
               <p className="text-xs text-muted-foreground mb-1">Notes</p>
-              <p className="text-sm">{project.completionNotes as string}</p>
+              <p className="text-sm">{project.completionNotes}</p>
             </div>
           )}
         </CardContent>
