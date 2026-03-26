@@ -17,6 +17,7 @@ export async function GET() {
       name: user.name,
       email: user.email,
       role: user.role,
+      profileImage: user.profileImage,
     });
   } catch (error) {
     console.error("Auth check error:", error);

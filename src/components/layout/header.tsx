@@ -98,14 +98,26 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="ml-auto flex items-center gap-3">
         {user && (
           <>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-              </div>
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-muted"
+              title="Profile settings"
+            >
+              {user.profileImage ? (
+                <img
+                  src={user.profileImage}
+                  alt={user.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                  {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                </div>
+              )}
               <span className="text-sm font-medium hidden sm:inline">
                 {user.name}
               </span>
-            </div>
+            </Link>
             <Button variant="ghost" size="icon" onClick={logout} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
