@@ -26,7 +26,7 @@ interface ProjectWithAggregates extends Project {
   };
 }
 
-export function ProjectSummaryTable() {
+export function ProjectSummaryTable({ group }: { group?: string }) {
   const [projects, setProjects] = useState<ProjectWithAggregates[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,7 +35,10 @@ export function ProjectSummaryTable() {
       try {
         const res = await fetch("/api/projects");
         if (!res.ok) return;
-        const data = await res.json();
+        let data = await res.json();
+        if (group && group !== "All") {
+          data = data.filter((p: ProjectWithAggregates) => p.projectGroup === group);
+        }
         setProjects(data);
       } catch {
         // silently handle
@@ -44,7 +47,7 @@ export function ProjectSummaryTable() {
       }
     }
     fetchProjects();
-  }, []);
+  }, [group]);
 
   if (isLoading) {
     return (

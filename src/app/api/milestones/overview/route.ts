@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const group = request.nextUrl.searchParams.get("group");
     const milestones = await prisma.milestone.findMany({
+      where: group ? { project: { projectGroup: group } } : undefined,
       include: {
-        project: { select: { id: true, name: true, status: true } },
+        project: { select: { id: true, name: true, status: true, projectGroup: true } },
       },
       orderBy: [{ project: { name: "asc" } }, { sortOrder: "asc" }],
     });

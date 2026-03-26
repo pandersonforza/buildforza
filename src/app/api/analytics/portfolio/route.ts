@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    const group = request.nextUrl.searchParams.get("group");
+    const projectWhere = group ? { projectGroup: group } : {};
+
     // Run queries in parallel for speed
     const [projects, paidThisMonth] = await Promise.all([
       prisma.project.findMany({
+        where: projectWhere,
         select: {
           id: true,
           name: true,
@@ -32,6 +36,7 @@ export async function GET(_request: NextRequest) {
         where: {
           status: 'Paid',
           paidDate: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+          ...(group ? { project: { projectGroup: group } } : {}),
         },
         _sum: { amount: true },
       }),

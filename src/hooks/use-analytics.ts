@@ -10,7 +10,7 @@ interface UsePortfolioAnalyticsReturn {
   mutate: () => void;
 }
 
-export function usePortfolioAnalytics(): UsePortfolioAnalyticsReturn {
+export function usePortfolioAnalytics(group?: string): UsePortfolioAnalyticsReturn {
   const [data, setData] = useState<PortfolioKPIs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,8 @@ export function usePortfolioAnalytics(): UsePortfolioAnalyticsReturn {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/analytics/portfolio");
+      const params = group && group !== "All" ? `?group=${encodeURIComponent(group)}` : "";
+      const res = await fetch(`/api/analytics/portfolio${params}`);
       if (!res.ok) throw new Error("Failed to fetch portfolio analytics");
       const json = await res.json();
       setData(json);
@@ -28,7 +29,7 @@ export function usePortfolioAnalytics(): UsePortfolioAnalyticsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [group]);
 
   useEffect(() => {
     fetchData();

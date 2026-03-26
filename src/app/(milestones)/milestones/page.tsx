@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
+import { PROJECT_GROUPS } from "@/lib/constants";
 import {
   PieChart,
   Pie,
@@ -31,14 +32,17 @@ const PIE_COLORS = ["#10b981", "#64748b"];
 export default function MilestonesOverviewPage() {
   const [milestones, setMilestones] = useState<MilestoneWithProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [groupFilter, setGroupFilter] = useState("All");
 
   useEffect(() => {
-    fetch("/api/milestones/overview")
+    setIsLoading(true);
+    const params = groupFilter !== "All" ? `?group=${encodeURIComponent(groupFilter)}` : "";
+    fetch(`/api/milestones/overview${params}`)
       .then((r) => r.json())
       .then(setMilestones)
       .catch(() => {})
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [groupFilter]);
 
   if (isLoading) {
     return (
@@ -77,7 +81,24 @@ export default function MilestonesOverviewPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <h1 className="text-3xl font-bold">Milestones Overview</h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-3xl font-bold">Milestones Overview</h1>
+        <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+          {["All", ...PROJECT_GROUPS].map((g) => (
+            <button
+              key={g}
+              onClick={() => setGroupFilter(g)}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                groupFilter === g
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

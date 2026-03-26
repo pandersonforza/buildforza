@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Target, DollarSign, Clock, BarChart3 } from "lucide-react";
+import { PROJECT_GROUPS } from "@/lib/constants";
 
 interface TrackRecordProject {
   id: string;
@@ -38,9 +39,12 @@ export default function TrackRecordPage() {
   const [projects, setProjects] = useState<TrackRecordProject[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [groupFilter, setGroupFilter] = useState("All");
 
   useEffect(() => {
-    fetch("/api/track-record")
+    setLoading(true);
+    const params = groupFilter !== "All" ? `?group=${encodeURIComponent(groupFilter)}` : "";
+    fetch(`/api/track-record${params}`)
       .then((r) => r.json())
       .then((data) => {
         setProjects(data.projects || []);
@@ -48,12 +52,29 @@ export default function TrackRecordPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [groupFilter]);
 
   if (loading) {
     return (
       <div className="p-8 space-y-6">
+        <div className="flex items-center gap-4">
         <h1 className="text-3xl font-bold">Track Record</h1>
+        <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+          {["All", ...PROJECT_GROUPS].map((g) => (
+            <button
+              key={g}
+              onClick={() => setGroupFilter(g)}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                groupFilter === g
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Skeleton key={i} className="h-24 rounded-lg" />
@@ -65,7 +86,24 @@ export default function TrackRecordPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <h1 className="text-3xl font-bold">Track Record</h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-3xl font-bold">Track Record</h1>
+        <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+          {["All", ...PROJECT_GROUPS].map((g) => (
+            <button
+              key={g}
+              onClick={() => setGroupFilter(g)}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                groupFilter === g
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {summary && summary.count === 0 ? (
         <Card>

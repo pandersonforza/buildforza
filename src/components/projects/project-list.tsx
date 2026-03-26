@@ -11,6 +11,7 @@ import { ProjectForm } from "@/components/projects/project-form";
 import { useToast } from "@/components/ui/toast";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { PROJECT_GROUPS } from "@/lib/constants";
 import type { Project } from "@/types";
 
 interface ProjectListProps {
@@ -111,25 +112,37 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
     },
   ];
 
-  const activeProjects = projects.filter(
-    (p) => p.status === "Active"
-  );
-  const completedProjects = projects.filter(
-    (p) => p.status === "Completed"
-  );
-  const onHoldProjects = projects.filter(
-    (p) => p.status === "On Hold"
-  );
-  const deadProjects = projects.filter(
-    (p) => p.status === "Dead"
-  );
-
+  const [groupFilter, setGroupFilter] = useState<string>("All");
   const [tab, setTab] = useState<"active" | "completed" | "onhold" | "dead">("active");
+
+  const filtered = groupFilter === "All" ? projects : projects.filter((p) => p.projectGroup === groupFilter);
+
+  const activeProjects = filtered.filter((p) => p.status === "Active");
+  const completedProjects = filtered.filter((p) => p.status === "Completed");
+  const onHoldProjects = filtered.filter((p) => p.status === "On Hold");
+  const deadProjects = filtered.filter((p) => p.status === "Dead");
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-bold">Projects</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Projects</h1>
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+            {["All", ...PROJECT_GROUPS].map((g) => (
+              <button
+                key={g}
+                onClick={() => setGroupFilter(g)}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  groupFilter === g
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
         {canEdit && (
           <Button
             onClick={() => {

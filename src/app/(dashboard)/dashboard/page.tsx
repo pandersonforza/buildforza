@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { usePortfolioAnalytics } from "@/hooks/use-analytics";
 import { KPICards } from "@/components/dashboard/kpi-cards";
@@ -7,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PendingApprovals } from "@/components/dashboard/pending-approvals";
 import { TaskList } from "@/components/dashboard/task-list";
 import { useAuth } from "@/hooks/use-auth";
+import { PROJECT_GROUPS } from "@/lib/constants";
 
 // Lazy load chart-heavy components to reduce initial bundle
 const ProjectStatusChart = dynamic(
@@ -19,7 +21,8 @@ const ProjectSummaryTable = dynamic(
 );
 
 export default function DashboardPage() {
-  const { data, isLoading, error } = usePortfolioAnalytics();
+  const [groupFilter, setGroupFilter] = useState("All");
+  const { data, isLoading, error } = usePortfolioAnalytics(groupFilter);
   const { canEdit } = useAuth();
 
   if (error) {
@@ -35,7 +38,24 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+          {["All", ...PROJECT_GROUPS].map((g) => (
+            <button
+              key={g}
+              onClick={() => setGroupFilter(g)}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                groupFilter === g
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {isLoading || !data ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -54,9 +74,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <ProjectStatusChart />
+      <ProjectStatusChart group={groupFilter} />
 
-      <ProjectSummaryTable />
+      <ProjectSummaryTable group={groupFilter} />
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { SelectNative } from "@/components/ui/select";
-import { PROJECT_STATUSES, PROJECT_STAGES } from "@/lib/constants";
+import { PROJECT_STATUSES, PROJECT_STAGES, PROJECT_GROUPS } from "@/lib/constants";
 import type { Project } from "@/types";
 
 interface UserOption {
@@ -43,6 +43,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     status: string;
     stage: string;
     projectManager: string;
+    projectGroup: string;
   }>({
     name: "",
     address: "",
@@ -51,6 +52,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     status: PROJECT_STATUSES[0],
     stage: PROJECT_STAGES[0],
     projectManager: "",
+    projectGroup: PROJECT_GROUPS[0],
   });
 
   useEffect(() => {
@@ -72,6 +74,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
         status: project.status,
         stage: project.stage,
         projectManager: project.projectManager,
+        projectGroup: project.projectGroup || PROJECT_GROUPS[0],
       });
     } else {
       setForm({
@@ -82,6 +85,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
         status: PROJECT_STATUSES[0],
         stage: PROJECT_STAGES[0],
         projectManager: "",
+        projectGroup: PROJECT_GROUPS[0],
       });
     }
   }, [project, open]);
@@ -98,6 +102,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
       status: form.status,
       stage: form.stage,
       projectManager: form.projectManager,
+      projectGroup: form.projectGroup,
     };
 
     try {
@@ -162,7 +167,20 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="projectGroup">Group</Label>
+              <select
+                id="projectGroup"
+                value={form.projectGroup}
+                onChange={(e) => setForm({ ...form, projectGroup: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                {PROJECT_GROUPS.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="tenant">Tenant</Label>
               <Input

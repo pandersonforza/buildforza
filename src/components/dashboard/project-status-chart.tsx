@@ -17,7 +17,7 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   Dead: "#ef4444",
 };
 
-export function ProjectStatusChart() {
+export function ProjectStatusChart({ group }: { group?: string }) {
   const [data, setData] = useState<StatusData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,7 +26,10 @@ export function ProjectStatusChart() {
       try {
         const res = await fetch("/api/projects");
         if (!res.ok) return;
-        const projects = await res.json();
+        let projects = await res.json();
+        if (group && group !== "All") {
+          projects = projects.filter((p: { projectGroup: string }) => p.projectGroup === group);
+        }
         const statusCounts: Record<string, number> = {};
         for (const p of projects) {
           statusCounts[p.status] = (statusCounts[p.status] || 0) + 1;
@@ -41,7 +44,7 @@ export function ProjectStatusChart() {
       }
     }
     fetchData();
-  }, []);
+  }, [group]);
 
   if (isLoading) {
     return (
