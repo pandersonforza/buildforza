@@ -473,7 +473,7 @@ export function InvoiceUpload({
           amount: inv.amount,
           date: inv.date,
           description: inv.description,
-          projectId: inv.suggestedProjectId || selectedProjectId || null,
+          projectId: projectId || selectedProjectId || inv.suggestedProjectId || null,
           budgetLineItemId: inv.suggestedLineItemId || null,
           filePath,
           aiConfidence: inv.confidence ?? null,
