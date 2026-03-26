@@ -47,6 +47,9 @@ export function InvoiceUpload({
 
   const [step, setStep] = useState<UploadStep>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileQueue, setFileQueue] = useState<File[]>([]);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
   // AI result + form state
@@ -77,6 +80,9 @@ export function InvoiceUpload({
       if (!isOpen) {
         setStep("upload");
         setSelectedFile(null);
+        setFileQueue([]);
+        setCurrentFileIndex(0);
+        setTotalFiles(0);
         setAiResult(null);
         setMultiInvoices([]);
         setMultiSelected([]);
@@ -163,22 +169,26 @@ export function InvoiceUpload({
       });
   }, [selectedProjectId, aiResult]);
 
-  // File selection
-  const handleFileSelect = (file: File) => {
-    if (file.type !== "application/pdf") {
+  // File selection — supports multiple files
+  const handleFilesSelect = (files: FileList | File[]) => {
+    const pdfs = Array.from(files).filter((f) => f.type === "application/pdf");
+    if (pdfs.length === 0) {
       toast({
         title: "Invalid file type",
-        description: "Please upload a PDF file",
+        description: "Please upload PDF files",
         variant: "destructive",
       });
       return;
     }
-    setSelectedFile(file);
+    setFileQueue(pdfs);
+    setTotalFiles(pdfs.length);
+    setCurrentFileIndex(0);
+    setSelectedFile(pdfs[0]);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
+    const files = e.target.files;
+    if (files && files.length > 0) handleFilesSelect(files);
   };
 
   // Drag and drop handlers
@@ -195,30 +205,27 @@ export function InvoiceUpload({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileSelect(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) handleFilesSelect(files);
   };
 
-  // Upload and process
-  const handleUploadAndProcess = async () => {
-    if (!selectedFile) return;
-
+  // Process a single file (upload + AI)
+  const processFile = async (file: File) => {
     setStep("processing");
 
     try {
-      // Step 1: Upload file directly to Blob (client-side, bypasses 4.5MB limit)
       const { upload } = await import("@vercel/blob/client");
-      const originalName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const originalName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const pathname = `invoices/${Date.now()}-${originalName}`;
 
-      const blob = await upload(pathname, selectedFile, {
+      const blob = await upload(pathname, file, {
         access: "private",
         handleUploadUrl: "/api/invoices/upload",
       });
 
       setFilePath(blob.url);
 
-      // Step 2: Process with AI
+      // Process with AI
       const processRes = await fetch("/api/invoices/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -231,20 +238,16 @@ export function InvoiceUpload({
       }
 
       const raw = await processRes.json();
-
-      // Handle multi-invoice response
       const rawInvoices: AIInvoiceResult[] = (raw.invoices || [raw]).map((inv: Record<string, unknown>) => ({
         ...inv,
         suggestedLineItemId: inv.suggestedLineItemId || inv.suggestedBudgetLineItemId || null,
       }));
 
       if (rawInvoices.length > 1) {
-        // Multiple invoices found
         setMultiInvoices(rawInvoices);
         setMultiSelected(rawInvoices.map(() => true));
         setStep("multi-review");
       } else {
-        // Single invoice — use existing review flow
         const result = rawInvoices[0];
         setAiResult(result);
         setVendorName(result.vendorName);
@@ -259,12 +262,17 @@ export function InvoiceUpload({
     } catch (err) {
       toast({
         title: "Processing failed",
-        description:
-          err instanceof Error ? err.message : "Could not process invoice",
+        description: err instanceof Error ? err.message : "Could not process invoice",
         variant: "destructive",
       });
       setStep("upload");
     }
+  };
+
+  // Upload and process current file
+  const handleUploadAndProcess = async () => {
+    if (!selectedFile) return;
+    await processFile(selectedFile);
   };
 
   // Save invoice
@@ -347,9 +355,32 @@ export function InvoiceUpload({
         title: submitForApproval
           ? "Invoice submitted for approval"
           : "Invoice created successfully",
+        description: totalFiles > 1 ? `(${currentFileIndex + 1} of ${totalFiles})` : undefined,
       });
       onSuccess();
-      handleOpenChange(false);
+
+      // If more files in queue, advance to next
+      const nextIndex = currentFileIndex + 1;
+      if (nextIndex < fileQueue.length) {
+        setCurrentFileIndex(nextIndex);
+        setSelectedFile(fileQueue[nextIndex]);
+        setAiResult(null);
+        setFilePath("");
+        setVendorName("");
+        setInvoiceNumber("");
+        setAmount(0);
+        setDate("");
+        setDescription("");
+        setSelectedLineItemId("");
+        // Keep projectId, approverId, submittedBy for convenience
+        setStep("upload");
+        // Auto-start processing the next file
+        setTimeout(() => {
+          processFile(fileQueue[nextIndex]);
+        }, 300);
+      } else {
+        handleOpenChange(false);
+      }
     } catch (err) {
       toast({
         title: "Error",
@@ -464,7 +495,7 @@ export function InvoiceUpload({
           <DialogTitle>
             {step === "upload" && "Upload Invoice"}
             {step === "processing" && "Processing Invoice(s)"}
-            {step === "review" && "Review Invoice Details"}
+            {step === "review" && (totalFiles > 1 ? `Review Invoice (${currentFileIndex + 1} of ${totalFiles})` : "Review Invoice Details")}
             {step === "multi-review" && `Review ${multiInvoices.length} Invoices Found`}
             {step === "saving" && "Saving Invoice(s)"}
           </DialogTitle>
@@ -495,13 +526,21 @@ export function InvoiceUpload({
                     : "border-border hover:border-primary/50"
               }`}
             >
-              {selectedFile ? (
+              {fileQueue.length > 0 ? (
                 <>
                   <FileText className="h-10 w-10 text-emerald-600 mb-2" />
-                  <p className="text-sm font-medium">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {(selectedFile.size / 1024).toFixed(1)} KB
+                  <p className="text-sm font-medium">
+                    {fileQueue.length === 1
+                      ? fileQueue[0].name
+                      : `${fileQueue.length} PDFs selected`}
                   </p>
+                  {fileQueue.length > 1 && (
+                    <div className="text-xs text-muted-foreground mt-1 max-h-16 overflow-y-auto">
+                      {fileQueue.map((f, i) => (
+                        <div key={i}>{f.name}</div>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground mt-2">
                     Click or drag to replace
                   </p>
@@ -510,10 +549,10 @@ export function InvoiceUpload({
                 <>
                   <Upload className="h-10 w-10 text-muted-foreground mb-2" />
                   <p className="text-sm font-medium">
-                    Drag and drop your invoice PDF here
+                    Drag and drop invoice PDFs here
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    or click to browse files
+                    or click to browse — you can select multiple files
                   </p>
                 </>
               )}
@@ -521,6 +560,7 @@ export function InvoiceUpload({
                 ref={fileInputRef}
                 type="file"
                 accept="application/pdf"
+                multiple
                 className="hidden"
                 onChange={handleInputChange}
               />
@@ -530,9 +570,9 @@ export function InvoiceUpload({
               <Button variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUploadAndProcess} disabled={!selectedFile}>
+              <Button onClick={handleUploadAndProcess} disabled={fileQueue.length === 0}>
                 <Upload className="h-4 w-4 mr-2" />
-                Upload &amp; Analyze
+                Upload &amp; Analyze{fileQueue.length > 1 ? ` (${fileQueue.length} files)` : ""}
               </Button>
             </DialogFooter>
           </div>
