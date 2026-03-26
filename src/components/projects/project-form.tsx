@@ -13,14 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
-import { SelectNative } from "@/components/ui/select";
 import { PROJECT_STATUSES, PROJECT_STAGES, PROJECT_GROUPS } from "@/lib/constants";
 import type { Project } from "@/types";
-
-interface UserOption {
-  id: string;
-  name: string;
-}
 
 interface ProjectFormProps {
   open: boolean;
@@ -33,8 +27,6 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
   const isEdit = !!project;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<UserOption[]>([]);
-
   const [form, setForm] = useState<{
     name: string;
     address: string;
@@ -42,7 +34,6 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     tenant: string;
     status: string;
     stage: string;
-    projectManager: string;
     projectGroup: string;
   }>({
     name: "",
@@ -51,18 +42,8 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     tenant: "",
     status: PROJECT_STATUSES[0],
     stage: PROJECT_STAGES[0],
-    projectManager: "",
     projectGroup: PROJECT_GROUPS[0],
   });
-
-  useEffect(() => {
-    if (open) {
-      fetch("/api/auth/users")
-        .then((res) => res.json())
-        .then((data: UserOption[]) => setUsers(data))
-        .catch(() => {});
-    }
-  }, [open]);
 
   useEffect(() => {
     if (project) {
@@ -73,7 +54,6 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
         tenant: project.tenant || "",
         status: project.status,
         stage: project.stage,
-        projectManager: project.projectManager,
         projectGroup: project.projectGroup || PROJECT_GROUPS[0],
       });
     } else {
@@ -84,7 +64,6 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
         tenant: "",
         status: PROJECT_STATUSES[0],
         stage: PROJECT_STAGES[0],
-        projectManager: "",
         projectGroup: PROJECT_GROUPS[0],
       });
     }
@@ -101,7 +80,6 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
       tenant: form.tenant,
       status: form.status,
       stage: form.stage,
-      projectManager: form.projectManager,
       projectGroup: form.projectGroup,
     };
 
@@ -216,18 +194,6 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="projectManager">Project Manager</Label>
-            <SelectNative
-              id="projectManager"
-              value={form.projectManager}
-              onChange={(e) => setForm({ ...form, projectManager: e.target.value })}
-              placeholder="Select a project manager"
-              options={users.map((u) => ({ value: u.name, label: u.name }))}
-              required
-            />
           </div>
 
           <DialogFooter>
