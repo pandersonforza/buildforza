@@ -5,7 +5,7 @@ import {
   Text,
   StyleSheet,
   Svg,
-  Polygon,
+  Path,
 } from "@react-pdf/renderer";
 
 const fmt = (n: number) =>
@@ -26,28 +26,31 @@ const EMERALD   = "#059669";
 const AMBER     = "#d97706";
 const ACCENT    = "#6366f1";
 
-// PropHound logo reproduced from public/logo.svg using pre-computed absolute
-// coordinates (translate(50,50) applied, second polygon rotated 20°).
-function PropHoundLogo({ size = 32 }: { size?: number }) {
+// Dog house icon — ported from src/components/ui/logo.tsx (viewBox 0 0 24 24)
+function PropHoundLogo({ size = 28 }: { size?: number }) {
+  const TEAL = "#2a9a9a";
   return (
-    <Svg width={size} height={size} viewBox="0 0 100 100">
-      {/* Outer decagon — teal */}
-      <Polygon
-        points="50,12 72.2,19.2 86,37.2 86,62.8 72.2,80.8 50,88 27.8,80.8 14,62.8 14,37.2 27.8,19.2"
-        fill="#1a7a7a"
-        opacity="0.9"
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {/* House body + roof fill */}
+      <Path
+        d="M12 2L2 10h3v10h14V10h3L12 2z"
+        fill={TEAL}
+        fillOpacity="0.25"
+        stroke={TEAL}
+        strokeWidth="1.5"
       />
-      {/* Rotated outer decagon — lighter teal */}
-      <Polygon
-        points="63,14.3 81.4,28.7 88.2,50.3 79.5,74.3 60.3,86.5 37,85.7 18.6,71.4 11.8,49.7 20.5,25.7 39.7,13.5"
-        fill="#2a9a9a"
-        opacity="0.6"
+      {/* Door arch */}
+      <Path
+        d="M9.5 20v-5.5a2.5 2.5 0 0 1 5 0V20"
+        fill={TEAL}
+        fillOpacity="0.4"
+        stroke={TEAL}
+        strokeWidth="1.5"
       />
-      {/* Inner decagon — white */}
-      <Polygon
-        points="50,24 65.2,28.9 74.7,41.2 74.7,58.8 65.2,71.1 50,76 34.8,71.1 25.3,58.8 25.3,41.2 34.8,28.9"
-        fill="white"
-      />
+      {/* Left roof ridge */}
+      <Path d="M12 2L2 10"  stroke={TEAL} strokeWidth="2" />
+      {/* Right roof ridge */}
+      <Path d="M12 2L22 10" stroke={TEAL} strokeWidth="2" />
     </Svg>
   );
 }
@@ -233,7 +236,10 @@ export function MilestonesReportDocument({
             {/* Brand row: logo + name */}
             <View style={s.headerBrand}>
               <PropHoundLogo size={28} />
-              <Text style={s.headerBrandName}>PropHound</Text>
+              <Text style={s.headerBrandName}>
+                <Text style={{ color: WHITE }}>Prop</Text>
+                <Text style={{ color: "#2a9a9a" }}>Hound</Text>
+              </Text>
             </View>
             {/* Report title */}
             <Text style={s.headerTitle}>Milestones Overview</Text>
