@@ -5,7 +5,7 @@ export const PROJECT_TYPES = [
   "Industrial",
 ] as const;
 
-export const PROJECT_GROUPS = ["Forza", "F7B", "Harman"] as const;
+export const PROJECT_GROUPS = ["Forza", "F7B", "Harman", "H7B"] as const;
 
 export const PROJECT_STATUSES = [
   "Active",
