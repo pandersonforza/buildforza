@@ -63,10 +63,10 @@ export function MilestoneForm({
         devFee: milestone.devFee.toString(),
         paidAmount: milestone.paidAmount.toString(),
         expectedDate: milestone.expectedDate
-          ? new Date(milestone.expectedDate).toISOString().split("T")[0]
+          ? milestone.expectedDate.split("T")[0]
           : "",
         completedDate: milestone.completedDate
-          ? new Date(milestone.completedDate).toISOString().split("T")[0]
+          ? milestone.completedDate.split("T")[0]
           : "",
         status: milestone.status,
       });

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { MilestoneForm } from "./milestone-form";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Upload, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -352,12 +352,12 @@ export function MilestonesPanel({ projectId }: MilestonesPanelProps) {
                         </td>
                         <td className="py-3 pr-4 text-muted-foreground">
                           {m.expectedDate
-                            ? new Date(m.expectedDate).toLocaleDateString()
+                            ? parseLocalDate(m.expectedDate).toLocaleDateString()
                             : "—"}
                         </td>
                         <td className="py-3 pr-4 text-muted-foreground">
                           {m.completedDate
-                            ? new Date(m.completedDate).toLocaleDateString()
+                            ? parseLocalDate(m.completedDate).toLocaleDateString()
                             : "—"}
                         </td>
                         {canEdit && (
