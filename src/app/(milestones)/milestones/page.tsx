@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { formatCurrency } from "@/lib/utils";
 import { PROJECT_GROUPS } from "@/lib/constants";
 import {
@@ -33,8 +34,8 @@ export default function MilestonesOverviewPage() {
   const [milestones, setMilestones] = useState<MilestoneWithProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [groupFilter, setGroupFilter] = useState("All");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     setIsLoading(true);
@@ -59,17 +60,19 @@ export default function MilestonesOverviewPage() {
     );
   }
 
-  const fromMs = dateFrom ? new Date(dateFrom).getTime() : null;
-  const toMs = dateTo ? new Date(dateTo + "T23:59:59").getTime() : null;
-  const hasDateFilter = fromMs !== null || toMs !== null;
+  const hasDateFilter = !!(dateFrom || dateTo);
 
   // Filter milestones by date range on expected date
   const filteredMilestones = hasDateFilter
     ? milestones.filter((m) => {
         if (!m.expectedDate) return false;
         const t = new Date(m.expectedDate).getTime();
-        if (fromMs !== null && t < fromMs) return false;
-        if (toMs !== null && t > toMs) return false;
+        if (dateFrom && t < dateFrom.getTime()) return false;
+        if (dateTo) {
+          const endOfDay = new Date(dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (t > endOfDay.getTime()) return false;
+        }
         return true;
       })
     : milestones;
@@ -129,30 +132,12 @@ export default function MilestonesOverviewPage() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 ml-2">
-          <span className="text-sm text-muted-foreground">From</span>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 rounded-md border border-border bg-input px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          />
-          <span className="text-sm text-muted-foreground">To</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 rounded-md border border-border bg-input px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          />
-          {hasDateFilter && (
-            <button
-              onClick={() => { setDateFrom(""); setDateTo(""); }}
-              className="px-3 py-1 text-sm font-medium rounded-md text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <DateRangePicker
+          from={dateFrom}
+          to={dateTo}
+          onChange={({ from, to }) => { setDateFrom(from); setDateTo(to); }}
+          className="ml-2"
+        />
       </div>
 
       {/* Dev Fees by Year */}
