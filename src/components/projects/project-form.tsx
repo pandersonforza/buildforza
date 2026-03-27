@@ -35,6 +35,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     status: string;
     stage: string;
     projectGroup: string;
+    projectedOpenYear: string;
   }>({
     name: "",
     address: "",
@@ -43,6 +44,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
     status: PROJECT_STATUSES[0],
     stage: PROJECT_STAGES[0],
     projectGroup: PROJECT_GROUPS[0],
+    projectedOpenYear: "",
   });
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
         status: project.status,
         stage: project.stage,
         projectGroup: project.projectGroup || PROJECT_GROUPS[0],
+        projectedOpenYear: project.projectedOpenYear?.toString() || "",
       });
     } else {
       setForm({
@@ -65,6 +68,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
         status: PROJECT_STATUSES[0],
         stage: PROJECT_STAGES[0],
         projectGroup: PROJECT_GROUPS[0],
+        projectedOpenYear: "",
       });
     }
   }, [project, open]);
@@ -81,6 +85,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
       status: form.status,
       stage: form.stage,
       projectGroup: form.projectGroup,
+      projectedOpenYear: form.projectedOpenYear || undefined,
     };
 
     try {
@@ -145,7 +150,7 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
             />
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="projectGroup">Group</Label>
               <select
@@ -193,6 +198,18 @@ export function ProjectForm({ open, onOpenChange, project, onSuccess }: ProjectF
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="projectedOpenYear">Open Year</Label>
+              <Input
+                id="projectedOpenYear"
+                type="number"
+                min="2020"
+                max="2040"
+                value={form.projectedOpenYear}
+                onChange={(e) => setForm({ ...form, projectedOpenYear: e.target.value })}
+                placeholder="e.g. 2026"
+              />
             </div>
           </div>
 

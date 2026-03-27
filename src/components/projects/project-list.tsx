@@ -76,6 +76,15 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
       cell: ({ row }) => <StatusBadge status={row.original.stage} type="stage" />,
     },
     {
+      accessorKey: "projectedOpenYear",
+      header: "Open Year",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {row.original.projectedOpenYear || "—"}
+        </span>
+      ),
+    },
+    {
       id: "actions",
       header: "",
       enableSorting: false,
@@ -109,9 +118,17 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
   ];
 
   const [groupFilter, setGroupFilter] = useState<string>("All");
+  const [yearFilter, setYearFilter] = useState<string>("All");
   const [tab, setTab] = useState<"active" | "completed" | "onhold" | "dead">("active");
 
-  const filtered = groupFilter === "All" ? projects : projects.filter((p) => p.projectGroup === groupFilter);
+  // Get unique years from projects
+  const years = [...new Set(projects.map((p) => p.projectedOpenYear).filter(Boolean))].sort() as number[];
+
+  const filtered = projects.filter((p) => {
+    if (groupFilter !== "All" && p.projectGroup !== groupFilter) return false;
+    if (yearFilter !== "All" && String(p.projectedOpenYear) !== yearFilter) return false;
+    return true;
+  });
 
   const activeProjects = filtered.filter((p) => p.status === "Active");
   const completedProjects = filtered.filter((p) => p.status === "Completed");
@@ -138,6 +155,33 @@ export function ProjectList({ projects, onMutate }: ProjectListProps) {
               </button>
             ))}
           </div>
+          {years.length > 0 && (
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+              <button
+                onClick={() => setYearFilter("All")}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  yearFilter === "All"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                All Years
+              </button>
+              {years.map((y) => (
+                <button
+                  key={y}
+                  onClick={() => setYearFilter(String(y))}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    yearFilter === String(y)
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {canEdit && (
           <Button

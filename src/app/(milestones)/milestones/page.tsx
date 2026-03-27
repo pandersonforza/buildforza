@@ -24,7 +24,7 @@ interface MilestoneWithProject {
   expectedDate: string | null;
   completedDate: string | null;
   status: string;
-  project: { id: string; name: string; status: string };
+  project: { id: string; name: string; status: string; projectedOpenYear: number | null };
 }
 
 const PIE_COLORS = ["#10b981", "#64748b"];
@@ -33,6 +33,7 @@ export default function MilestonesOverviewPage() {
   const [milestones, setMilestones] = useState<MilestoneWithProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [groupFilter, setGroupFilter] = useState("All");
+  const [yearFilter, setYearFilter] = useState("All");
 
   useEffect(() => {
     setIsLoading(true);
@@ -57,20 +58,42 @@ export default function MilestonesOverviewPage() {
     );
   }
 
-  const totalExpected = milestones.reduce((s, m) => s + m.devFee, 0);
-  const totalPaid = milestones.reduce((s, m) => s + m.paidAmount, 0);
+  // Get unique years from milestone projects
+  const years = [...new Set(milestones.map((m) => m.project.projectedOpenYear).filter(Boolean))].sort() as number[];
+
+  // Filter by year
+  const filteredMilestones = yearFilter === "All"
+    ? milestones
+    : milestones.filter((m) => String(m.project.projectedOpenYear) === yearFilter);
+
+  const totalExpected = filteredMilestones.reduce((s, m) => s + m.devFee, 0);
+  const totalPaid = filteredMilestones.reduce((s, m) => s + m.paidAmount, 0);
   const totalRemaining = totalExpected - totalPaid;
-  const completedCount = milestones.filter((m) => m.status === "Completed").length;
-  const pendingCount = milestones.filter((m) => m.status === "Pending").length;
+  const completedCount = filteredMilestones.filter((m) => m.status === "Completed").length;
+  const pendingCount = filteredMilestones.filter((m) => m.status === "Pending").length;
 
   const pieData = [
     { name: "Completed", value: completedCount },
     { name: "Pending", value: pendingCount },
   ].filter((d) => d.value > 0);
 
+  // Dev fees by year summary
+  const feesByYear = new Map<number, { expected: number; paid: number }>();
+  for (const m of milestones) {
+    const yr = m.project.projectedOpenYear;
+    if (!yr) continue;
+    const existing = feesByYear.get(yr) || { expected: 0, paid: 0 };
+    existing.expected += m.devFee;
+    existing.paid += m.paidAmount;
+    feesByYear.set(yr, existing);
+  }
+  const feesByYearData = [...feesByYear.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([year, data]) => ({ year, ...data, remaining: data.expected - data.paid }));
+
   // Group milestones by project for the cards
   const projectGroups = new Map<string, { project: { id: string; name: string }; milestones: MilestoneWithProject[] }>();
-  for (const m of milestones) {
+  for (const m of filteredMilestones) {
     const existing = projectGroups.get(m.project.id);
     if (existing) {
       existing.milestones.push(m);
@@ -98,7 +121,73 @@ export default function MilestonesOverviewPage() {
             </button>
           ))}
         </div>
+        {years.length > 0 && (
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+            <button
+              onClick={() => setYearFilter("All")}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                yearFilter === "All"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              All Years
+            </button>
+            {years.map((y) => (
+              <button
+                key={y}
+                onClick={() => setYearFilter(String(y))}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  yearFilter === String(y)
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Dev Fees by Year */}
+      {feesByYearData.length > 1 && yearFilter === "All" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Dev Fees by Year</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="py-2 pr-4">Year</th>
+                  <th className="py-2 pr-4 text-right">Expected</th>
+                  <th className="py-2 pr-4 text-right">Paid</th>
+                  <th className="py-2 text-right">Remaining</th>
+                </tr>
+              </thead>
+              <tbody>
+                {feesByYearData.map((row) => (
+                  <tr key={row.year} className="border-b border-border/50">
+                    <td className="py-2 pr-4 font-medium">{row.year}</td>
+                    <td className="py-2 pr-4 text-right">{formatCurrency(row.expected)}</td>
+                    <td className="py-2 pr-4 text-right text-emerald-400">{formatCurrency(row.paid)}</td>
+                    <td className="py-2 text-right text-amber-400">{formatCurrency(row.remaining)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-primary/20 font-semibold">
+                  <td className="py-2 pr-4">Total</td>
+                  <td className="py-2 pr-4 text-right">{formatCurrency(feesByYearData.reduce((s, r) => s + r.expected, 0))}</td>
+                  <td className="py-2 pr-4 text-right text-emerald-400">{formatCurrency(feesByYearData.reduce((s, r) => s + r.paid, 0))}</td>
+                  <td className="py-2 text-right text-amber-400">{formatCurrency(feesByYearData.reduce((s, r) => s + r.remaining, 0))}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

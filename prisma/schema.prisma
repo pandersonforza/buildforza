@@ -71,8 +71,9 @@ model Project {
   endDate        DateTime?
   totalBudget    Float     @default(0)
   projectManager String
-  projectGroup   String   @default("Forza")
-  description    String?
+  projectGroup      String   @default("Forza")
+  projectedOpenYear Int?
+  description       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
