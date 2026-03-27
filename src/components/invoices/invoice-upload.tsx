@@ -583,7 +583,7 @@ export function InvoiceUpload({
 
   const projectOptions = projects.map((p) => ({
     value: p.id,
-    label: p.name,
+    label: p.address ? `${p.name} - ${p.address}` : p.name,
   }));
 
   const lineItemOptions = lineItems.map((li) => ({
