@@ -222,9 +222,10 @@ export async function PUT(
 
         // Parse dev fee milestone IDs if present, then mark each milestone as paid in the same transaction
         const devFeeMilestoneMatch = existing.aiNotes?.match(/__devFeeMilestoneIds__([\s\S]+)$/);
-        const devFeeMilestoneIds: string[] = devFeeMilestoneMatch
-          ? (JSON.parse(devFeeMilestoneMatch[1]) as string[])
-          : [];
+        let devFeeMilestoneIds: string[] = [];
+        if (devFeeMilestoneMatch) {
+          try { devFeeMilestoneIds = JSON.parse(devFeeMilestoneMatch[1]) as string[]; } catch { /* skip */ }
+        }
 
         const invoice = await prisma.$transaction(async (tx) => {
           if (devFeeMilestoneIds.length > 0) {

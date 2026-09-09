@@ -161,14 +161,17 @@ export function InvoiceList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "Paid" }),
       });
-      if (!res.ok) throw new Error("Failed to mark as paid");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error || "Failed to mark as paid");
+      }
       const updated = await res.json() as unknown as InvoiceWithRelations;
       toast({ title: "Invoice marked as paid" });
       patchInvoice(updated);
-    } catch {
+    } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to mark invoice as paid",
+        description: err instanceof Error ? err.message : "Failed to mark invoice as paid",
         variant: "destructive",
       });
     }
